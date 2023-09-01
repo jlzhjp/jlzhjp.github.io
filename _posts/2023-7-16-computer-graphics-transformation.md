@@ -1,6 +1,5 @@
 ---
 title: 图形学变换
-date: 2023/7/16
 math: true
 ---
 

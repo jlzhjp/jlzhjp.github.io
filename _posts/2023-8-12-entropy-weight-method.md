@@ -1,6 +1,5 @@
 ---
 title: 熵权法
-date: 2023/8/12
 math: true
 ---
 
