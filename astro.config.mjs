@@ -4,8 +4,24 @@ import sitemap from "@astrojs/sitemap"
 import tailwind from "@astrojs/tailwind"
 import react from "@astrojs/react"
 
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
+
+import markdoc from "@astrojs/markdoc"
+
 // https://astro.build/config
 export default defineConfig({
   site: "https://example.com",
-  integrations: [mdx(), sitemap(), tailwind(), react()],
+  integrations: [mdx(), sitemap(), tailwind(), react(), markdoc()],
+  markdown: {
+    shikiConfig: {
+      themes: {
+        light: "catppuccin-latte",
+        dark: "catppuccin-mocha",
+      },
+      langs: ["racket"],
+    },
+    remarkPlugins: [remarkMath],
+    rehypePlugins: [rehypeKatex],
+  },
 })
