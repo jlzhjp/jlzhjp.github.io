@@ -1,6 +1,8 @@
 ---
 import { type CollectionEntry, getCollection } from "astro:content"
-import BlogPost from "../layouts/BlogPost.astro"
+
+import BasicLayout from "../layouts/BasicLayout.astro"
+import FormattedDate from "../components/FormattedDate"
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog")
@@ -12,9 +14,88 @@ export async function getStaticPaths() {
 type Props = CollectionEntry<"blog">
 
 const post = Astro.props
-const { Content } = await post.render()
+const { title, description, pubDate, updatedDate, heroImage } = post.data
+
+const { Content, headings } = await post.render()
 ---
 
-<BlogPost {...post.data}>
-  <Content />
-</BlogPost>
+<BasicLayout title={title} description={description}>
+  <main class="mx-4">
+    <article class="max-w-[1080px] mx-auto">
+      <div class="blog-font-pixel">
+        <div>
+          <h1 class="text-4xl m-4 text-center">{title}</h1>
+          <div class="text-center"><FormattedDate date={pubDate} /></div>
+          <hr class="border-4 mx-4 my-8" />
+        </div>
+        <div class="md-body">
+          <Content />
+        </div>
+      </div>
+    </article>
+    <div
+      id="table-of-contents-container"
+      class="fixed hidden right-0 top-0 z-10 h-screen w-screen"
+    >
+      <nav
+        id="table-of-contents"
+        class="blog-border-pixel blog-font-pixel float-end w-screen md:w-[480px] h-screen bg-[var(--base)] overflow-y-auto"
+      >
+        <h2 class="m-2">Contents</h2>
+        <button
+          id="button-close-menu"
+          class="blog-icon-close blog-border-pixel w-[48px] h-[48px] fixed top-4 right-4 bg-[var(--base)]"
+        ></button>
+        <div class="m-2">
+          {
+            headings.map((heading) => (
+              <a
+                class="block text-nowrap overflow-ellipsis"
+                href={"#" + heading.slug}
+              >
+                {heading.text}
+              </a>
+            ))
+          }
+        </div>
+      </nav>
+    </div>
+  </main>
+
+  <button
+    id="button-open-menu"
+    class="blog-icon-menu blog-border-pixel fixed bottom-8 right-8 w-[48px] h-[48px] active:scale-75 bg-[var(--base)]"
+  >
+  </button>
+
+  <script>
+    document
+      .querySelector("#button-open-menu")!
+      .addEventListener("click", () => {
+        document
+          .querySelector("#table-of-contents-container")!
+          .classList.remove("hidden")
+      })
+    document
+      .querySelector("#button-close-menu")!
+      .addEventListener("click", () => {
+        document
+          .querySelector("#table-of-contents-container")!
+          .classList.add("hidden")
+      })
+
+    document
+      .querySelector("#table-of-contents-container")!
+      .addEventListener("click", (event) => {
+        document
+          .querySelector("#table-of-contents-container")!
+          .classList.add("hidden")
+      })
+
+    document
+      .querySelector("#table-of-contents")!
+      .addEventListener("click", (event) => {
+        event.stopPropagation()
+      })
+  </script>
+</BasicLayout>

@@ -1,5 +1,4 @@
 import { cn } from "../utils"
-import classes from "./PixelBorder.module.css"
 
 type PixelBorderProps = {
   tag: keyof JSX.IntrinsicElements
@@ -14,7 +13,7 @@ const PixelBorder: React.FC<PixelBorderProps> = ({
 }: PixelBorderProps & React.HTMLAttributes<HTMLElement>) => {
   const Wrapper = tag
   return (
-    <Wrapper className={cn(classes.pixelBorder, className)}>{children}</Wrapper>
+    <Wrapper className={cn("blog-border-pixel", className)}>{children}</Wrapper>
   )
 }
 

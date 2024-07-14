@@ -1,5 +1,5 @@
 ---
-import PixelLink from "./PixelLink"
+
 ---
 
 <style>
@@ -26,15 +26,18 @@ import PixelLink from "./PixelLink"
 
 <header class="flex px-4 py-2 m-4 items-center blog-font-pixel">
   <h1 class="m-0 text-3xl blog-font-pixel">
-    <PixelLink href="/">Home</PixelLink>
+    <a href="/">Home</a>
   </h1>
   <div class="flex-grow"></div>
   <ul class="flex gap-2">
     <li class="text-xl">
-      <PixelLink href="/about">About</PixelLink>
+      <a href="/about">About</a>
     </li>
     <li class="text-xl">
-      <PixelLink href="/thanks">Thanks</PixelLink>
+      <a href="/thanks">Thanks</a>
     </li>
   </ul>
+  <div class="ml-4 flex">
+    <slot name="tail" />
+  </div>
 </header>

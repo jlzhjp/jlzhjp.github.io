@@ -1,0 +1,1157 @@
+---
+title: "SICP 第二章 构造数据抽象 (WIP)"
+description: "SICP 第二章的习题及读书笔记"
+pubDate: "Jul 11 2024"
+---
+
+import SchemeCode from "../../components/SchemeCode.jsx"
+
+# 2.1 数据抽象导引
+
+## 实例 有理数的算术运算
+
+```scheme
+(define (gcd x y)
+  (if (= y 0)
+      x
+      (gcd y (remainder x y))))
+
+(define (make-rat n d)
+  (let [(divisor (gcd n d))]
+    (let [(n* (/ n divisor))
+          (d* (/ d divisor))]
+      (cond [(> d* 0) (cons n* d*)]
+            [(< d* 0) (cons (- n*) (- d*))]))))
+
+(define (numer x) (car x))
+(define (denom x) (cdr x))
+
+(define (add-rat x y)
+  (make-rat (+ (* (numer x) (denom y))
+               (* (numer y) (denom x)))
+            (* (denom x) (denom y))))
+
+(define (sub-rat x y)
+  (make-rat (- (* (numer x) (denom y))
+               (* (numer y) (denom x)))
+            (* (denom x) (denom y))))
+
+(define (mul-rat x y)
+  (make-rat (* (numer x) (numer y))
+            (* (denom x) (denom y))))
+
+(define (div-rat x y)
+  (make-rat (* (numer x) (denom y))
+            (* (denom x) (numer y))))
+
+(define (print-rat x)
+  (newline)
+  (display (numer x))
+  (display "/")
+  (display (denom x)))
+
+(define (equal-rat? x y)
+  (= (* (numer x) (denom y))
+     (* (numer y) (denom x))))
+
+(define one-half (make-rat 1 2))
+(print-rat one-half)
+(define one-third (make-rat 1 3))
+(print-rat one-third)
+
+(print-rat (add-rat one-half one-third))
+(print-rat (mul-rat one-half one-third))
+(print-rat (add-rat one-third one-third))
+(print-rat (make-rat 6 -9))
+```
+
+## 练习 2.1 改进 `make-rat` 的实现
+
+```scheme
+(define (make-rat n d)
+  (let [(divisor (gcd n d))]
+    (let [(n* (/ n divisor))
+          (d* (/ d divisor))]
+      (cond [(> d* 0) (cons n* d*)]
+            [(< d* 0) (cons (- n*) (- d*))]))))
+```
+
+## 练习 2.2 线段中点
+```scheme
+(define (make-segment start end) (cons start end))
+
+(define (start-segment seg) (car seg))
+
+(define (end-segment seg) (cdr seg))
+
+(define (make-point x-point y-point) (cons x-point y-point))
+
+(define (x-point point) (car point))
+
+(define (y-point point) (cdr point))
+
+(define (midpoint-segment seg)
+  (make-point
+   (/ (+ (x-point (start-segment seg))
+         (x-point (end-segment seg)))
+      2)
+   (/ (+ (y-point (start-segment seg))
+         (y-point (end-segment seg)))
+      2)))
+
+(define (print-point p)
+  (newline)
+  (display "(")
+  (display (x-point p))
+  (display ",")
+  (display (y-point p))
+  (display ")"))
+
+(define line (make-segment (make-point 1 2) (make-point 3 4)))
+(define mid (midpoint-segment line))
+(print-point mid)
+```
+
+## 练习 2.3 平面矩形的表示
+```scheme
+(define (make-rect point-lt point-rb) (cons point-lt point-rb))
+(define (rect-point-lt rect) (car rect))
+(define (rect-point-rb rect) (cdr rect))
+
+(define (rect-width rect) (-(x-point (rect-point-rb rect))
+                            (x-point (rect-point-lt rect))))
+
+(define (rect-height rect) (- (y-point (rect-point-lt rect))
+                              (y-point (rect-point-rb rect))))
+
+(define (rect-area rect) (* (rect-width rect) (rect-height rect)))
+(define (rect-perimeter rect) (* 2 (+ (rect-width rect) (rect-height rect))))
+
+(define rect (make-rect (make-point 1 4) (make-point 3 1)))
+
+(display "Width: ") (display (rect-width rect)) (newline)
+(display "Height: ") (display (rect-height rect)) (newline)
+(display "Area: ") (display (rect-area rect)) (newline)
+(display "Perimeter: ") (display (rect-perimeter rect)) (newline)
+```
+
+## 实例 序对的一种过程性表示
+```scheme
+(define (cons x y)
+  (define (dispatch m)
+    (cond [(= m 0) x]
+          [(= m 1) y]
+          [else (error "Argument not 0 or 1 -- CONS" m)]))
+  dispatch)
+
+(define (car z) (z 0))
+(define (cdr z) (z 1))
+
+(define pair (cons 1 2))
+(display (car pair))
+(display (cdr pair))
+```
+
+## 练习 2.4 序对的另一种过程性表示
+```scheme
+(define (cons x y)
+  (lambda (m) (m x y)))
+
+(define (car z)
+  (z (lambda (p q) p)))
+
+(define (cdr z)
+  (z (lambda (p q) q)))
+
+(car z)
+(car (lambda (m) (m x y)))
+(((lambda (m) (m x y)) (lambda (p q) p)))
+((lambda (p q) p) x y)
+p
+```
+
+## 练习 2.5 将 $a$ 和 $b$ 的序对表示为乘积 $2^a \cdot 3^b$ 对应的整数
+
+```scheme
+(define (cons-int a b) (* (expt 2 a) (expt 3 b)))
+
+(define (car-int z)
+  (if (= 0 (remainder z 3))
+      (car-int (/ z 3))
+      (log z 2)))
+
+(define (cdr-int z)
+  (log (/ z (expt 2 (car-int z))) 3))
+
+(define pair (cons-int 6 3))
+(display (car-int pair)) (display " ") (display (cdr-int pair))
+```
+
+## 练习 2.6 丘奇数
+
+```scheme
+(define zero (lambda (f)
+               (lambda (x) x)))
+
+(define (add-1 n)
+  (lambda (f)
+    (lambda (x)
+      (f ((n f) x)))))
+
+(define one (lambda (f)
+              (lambda (x)
+                (f x))))
+
+(define two (lambda (f)
+              (lambda (x)
+                (f (f x)))))
+
+(define (add m n)
+  (lambda (f)
+    (lambda (x)
+      ((m f) ((n f) x)))))
+
+(define (church->number n)
+  ((n (lambda (x) (+ x 1))) 0))
+
+(display (church->number (add one two)))
+```
+
+## 练习 2.7 定义 `upper-bound` 和 `lower-bound`
+```scheme
+(define (make-interval a b) (cons a b))
+
+(define (upper-bound x) (cdr x))
+
+(define (lower-bound x) (car x))
+```
+
+## 练习 2.8 定义 `sub-interval`
+```scheme
+(define (sub-interval x y)
+  (make-interval (- (lower-bound x) (upper-bound y))
+                 (- (upper-bound x) (lower-bound y))))
+```
+
+## 练习 2.9 区间的宽度
+```scheme
+(define (width x)
+  (/ (- (upper-bound x) (lower-bound x)) 2))
+```
+
+$$
+\begin{align}
+& (\mathrm{width} \ (\mathrm{add}\ [x_1,y_1]\ [x_2,y_2])) \\
+\implies & (\mathrm{width}\ [x_1 + x_2, y_1 + y_2]) \\
+\implies & \frac{(y_1 + y_2) - (x_1 + x_2)}{2} \\
+\implies & \frac{y_1 - x_1}{2} + \frac{y_2 - x_2}{2} \\
+\implies & (\mathrm{width}\ [x_1, y_1]) + (\mathrm{width}\ [x_2, y_2])
+\end{align}
+$$
+
+$$
+\begin{align}
+& (\mathrm{width} \ (\mathrm{sub}\ [x_1,y_1]\ [x_2,y_2])) \\
+\implies & (\mathrm{width}\ [x_1 - y_2, y_1 - x_2]) \\
+\implies & \frac{(y_1 - x_2) - (x_1 - y_2)}{2} \\
+\implies & \frac{y_1 - x_1}{2} + \frac{y_2 - x_2}{2} \\
+\implies & (\mathrm{width}\ [x_1, y_1]) + (\mathrm{width}\ [x_2, y_2])
+\end{align}
+$$
+
+## 练习 2.10 处理被除区间跨过 0 的情况
+```scheme
+(define (div-interval x y)
+  (if (<= (* (lower-bound y) (upper-bound y)) 0)
+      (error "can not divide a span that spans zero.")
+      (mul-interval
+       x
+       (make-interval (/ 1.0 (upper-bound y))
+                      (/ 1.0 (lower-bound y))))))
+```
+
+## 练习 2.11 将 `mul-interval` 分解为 9 种情况
+TODO
+
+
+## 练习 2.12
+TODO
+
+## 练习 2.13
+TODO
+
+## 练习 2.14
+TODO
+
+## 练习 2.15
+TODO
+
+## 练习 2.16
+TODO
+
+# 2.2 层次性数据和闭包性质
+
+## 示例 表操作
+
+```scheme
+(define (list-ref items n)
+  (if (= n 0)
+      (car items)
+      (list-ref (cdr items) (- n 1))))
+
+(define (length items)
+  (if (null? items)
+      0
+      (+ 1 (length (cdr items)))))
+
+(define (length* items)
+  (define (length-iter a count)
+    (if (null? a)
+        count
+        (length-iter (cdr a) (+ 1 count))))
+  (length-iter items 0))
+
+(define (append list1 list2)
+  (if (null? list1)
+      list2
+      (cons (car list1) (append (cdr list1) list2))))
+```
+
+
+## 练习 2.17 定义 `last-pair`
+```scheme
+(define (reverse items)
+  (define (iter xs ys)
+    (if (null? xs)
+        ys
+        (iter (cdr xs) (cons (car xs) ys))))
+  (iter items nil))
+```
+
+## 练习 2.18 定义 `reverse`
+```scheme
+(define (reverse items)
+  (define (iter xs ys)
+    (if (null? xs)
+        ys
+        (iter (cdr xs) (cons (car xs) ys))))
+  (iter items nil))
+```
+
+## 练习 2.19 换零钱
+```scheme
+(define us-coins (list 50 25 10 5 1))
+(define uk-coins (list 100 50 20 10 5 2 1))
+
+(define (no-more? coin-values) (null? coin-values))
+
+(define (first-denomination coin-values) (car coin-values))
+
+(define (except-first-denomination coin-values) (cdr coin-values))
+
+(define (cc amount coin-values)
+  (cond [(= amount 0) 1]
+        [(or (< amount 0) (no-more? coin-values)) 0]
+        [else
+         (+ (cc amount (except-first-denomination coin-values))
+            (cc (- amount (first-denomination coin-values)) coin-values))]))
+
+(cc 100 us-coins)
+```
+
+## 练习 2.20 `same-parity`
+```scheme
+(define (same-parity . items)
+  (let ([parity (remainder (car items) 2)])
+    (define (helper xs)
+      (cond [(null? xs) '()]
+            [(= (remainder (car xs) 2) parity)
+             (cons (car xs) (helper (cdr xs)))]
+            [else (helper (cdr xs))]))
+    (helper items)))
+```
+
+## 实例 对象的映射
+```scheme
+(define (scale-list items factor)
+  (if (null? items)
+      nil
+      (cons (* (car items) factor)
+            (scale-list (cdr items) factor))))
+
+(define (map proc items)
+  (if (null? items)
+      nil
+      (cons (proc (car items))
+            (map proc (cdr items)))))
+
+(define (scale-list* items factor)
+  (map (lambda (x) (* x factor))
+       items))
+```
+## 更具有一般性的 `map` 过程
+Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参数，将这个过程应用于所有表的第一个元素，而后应用它们的第二个元素，如此下去，返回所有结果的表，例如：
+```scheme
+(map + (list 1 2 3) (list 40 50 60) (list 700 800 900))
+
+'(741 852 963)
+
+(map (lambda (x y) (+ x (* 2 y)))
+  (list 1 2 3)
+  (list 4 5 6))
+
+'(9 12 15)
+```
+
+## 练习 2.21 `square-list` 的实现
+```scheme
+(define (square-list items)
+  (define (square x) (* x x))
+  (if (null? items)
+      nil
+      (cons (square (car items)) (square-list (cdr items)))))
+
+(define (square-list* items)
+  (define (square x) (* x x))
+  (map square items))
+```
+
+## 练习 2.22 `square-list` 的迭代实现
+```scheme
+(iter '(1 2 3) '())
+(iter '(2 3) '(1))
+(iter '(3) '(1 2))
+(iter '() '(1 2 3))
+```
+
+```scheme
+(define (square-list** items)
+  (define (square x) (* x x))
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons answer
+                    (square (car things))))))
+  (iter items nil))
+
+(square-list** '(1 2 3 4))
+```
+
+结果为
+```
+((((() . 1) . 4) . 9) . 16)
+```
+序列中的每一个序对的第二个元素应该指向下一个序对
+
+## 练习 2.23 `for-each` 的实现
+```scheme
+(define (for-each f items)
+  (if (null? (cdr items))
+      (f (car items))
+      (begin (f (car items)) (for-each f (cdr items)))))
+```
+
+## 实例 `count-leaves` 的实现
+三种情况：
+1. 空表的 `count-leaves` 是 0
+2. 对于树 `x` 的 `count-leaves` 应该是 `(count-leaves (car x))` 和 `(count-leaves (cdr x))` 的和
+3. 一个树叶的 `count-leaves` 是 1
+
+```scheme
+(define (count-leaves x)
+  (cond [(null? x) 0]
+        [(pair? x) (+ (count-leaves (car x)) (count-leaves (cdr x)))]
+        [else 1]))
+```
+
+## 练习 2.24 `(list 1 (list 2 (list 3 4)))` 所代表的树
+```scheme
+(1 (2 (3 4)))
+```
+
+## 练习 2.25 给出下表中能够取出 7 的 `car` 和 `cdr` 组合
+```scheme
+(define a '(1 3 (5 7) 9))
+(define b '((7)))
+(define c '(1 (2 (3 (4 (5 (6 7)))))))
+
+(car (cdr (car (cdr (cdr a)))))
+
+(car (car b))
+
+(car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr c))))))))))))
+```
+
+## 练习 2.26
+```scheme
+(define x (list 1 2 3))
+(define y (list 4 5 6))
+
+(append x y)
+; (1 2 3 4 5 6)
+(cons x y)
+; ((1 2 3) 4 5 6)
+(list x y)
+; ((1 2 3) (4 5 6))
+```
+
+## 练习 2.27 `deep-reverse`
+```scheme
+(define (reverse items)
+  (define (iter xs ys)
+    (if (null? xs)
+        ys
+        (iter (cdr xs) (cons (car xs) ys))))
+  (iter items nil))
+```
+
+```scheme
+(define (deep-reverse items)
+  (define (iter rest answer)
+    (if (null? rest)
+        answer
+        (let ([cur (if (pair? (car rest))
+                       (deep-reverse (car rest))
+                       (car rest))])
+          (iter (cdr rest) (cons cur answer)))))
+  (iter items nil))
+```
+
+## 练习 2.28 `fringe`
+```scheme
+(define (fringe x)
+  (cond [(null? x) '()]
+        [(pair? x) (append (fringe (car x)) (fringe (cdr x)))]
+        [else (list x)]))
+```
+
+
+## 练习 2.29 二叉活动体
+```scheme
+(define (make-mobile left right)
+  (list left right))
+
+(define (make-branch length structure)
+  (list length structure))
+
+(define (left-branch mobile) (list-ref mobile 0))
+(define (right-branch mobile) (list-ref mobile 1))
+(define (branch-length branch) (list-ref branch 0))
+(define (branch-structure branch) (list-ref branch 1))
+
+(define (total-weight mobile)
+  (if (pair? mobile)
+      (+ (total-weight (branch-structure (left-branch mobile)))
+         (total-weight (branch-structure (right-branch mobile))))
+      mobile))
+
+(define mobile-x
+  (make-mobile (make-branch 1 (make-mobile (make-branch 1 1)
+                                           (make-branch 1 2)))
+               (make-branch 1 (make-mobile (make-branch 1 3)
+                                           (make-branch 1 4)))))
+
+(define mobile-balanced
+  (make-mobile (make-branch 2 (make-mobile (make-branch 1 2)
+                                           (make-branch 1 2)))
+               (make-branch 1 (make-mobile (make-branch 1 4)
+                                           (make-branch 1 4)))))
+
+(define (is-balance mobile)
+  (if (pair? mobile)
+      (let ([left-len (branch-length (left-branch mobile))]
+            [right-len (branch-length (right-branch mobile))]
+            [left-struct (branch-structure (left-branch mobile))]
+            [right-struct (branch-structure (right-branch mobile))])
+        (and (= (* left-len (total-weight left-struct))
+                (* right-len (total-weight right-struct)))
+             (is-balance left-struct)
+             (is-balance right-struct)))
+      #t))
+```
+
+## 实例 对树的映射
+```scheme
+(define (scale-tree tree factor)
+  (cond [(null? tree) '()]
+        [(not (pair? tree)) (* tree factor)]
+        [else (cons (scale-tree (car tree) factor)
+                    (scale-tree (cdr tree) factor))]))
+
+(define (scale-tree* tree factor)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+             (scale-tree sub-tree factor)
+             (* sub-tree factor)))
+       tree))
+```
+
+## 练习 2.30 定义 `square-tree`
+```scheme
+(define (square x) (* x x))
+
+(define (square-tree tree)
+  (cond [(null? tree) '()]
+        [(not (pair? tree)) (* tree tree)]
+        [else (cons (square-tree (car tree))
+                    (square-tree (cdr tree)))]))
+
+(define (square-tree* tree)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+             (square-tree sub-tree)
+             (square sub-tree)))
+       tree))
+```
+
+## 练习 2.31 `tree-map`
+```scheme
+(define (tree-map f tree)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+             (tree-map f sub-tree)
+             (f sub-tree)))
+       tree))
+
+(define (square-tree** tree) (tree-map square tree))
+```
+
+## 练习 2.32 求集合的所有子集
+```scheme
+(define (subsets s)
+  (if (null? s)
+      (list nil)
+      (let ((rest (subsets (cdr s))))
+        (append rest (map (lambda (subset) (append (list (car s)) subset))
+                          rest)))))
+```
+
+## 实例 计算值为奇数的叶子的平方和
+```scheme
+(define (sum-odd-squares tree)
+  (cond [(null? tree) 0]
+        [(not (pair? tree))
+         (if (odd? tree) (square tree) 0)]
+        [else (+ (sum-odd-squares (car tree))
+                 (sum-odd-squares (cdr tree)))]))
+```
+
+## 实例 构造出所有偶数的斐波那契数的一个表
+```scheme
+(define (even-fibs n)
+  (define (fib-iter a b count)
+    (if (= count 0)
+        b
+        (fib-iter (+ a b) a (- count 1))))
+
+  (define (fib n) (fib-iter 1 0 n))
+
+  (define (next k)
+    (if (> k n)
+        nil
+        (let ([f (fib k)])
+          (if (even? f)
+              (cons f (next (+ k 1)))
+              (next (+ k 1))))))
+  (next 0))
+```
+
+## 实例 信号流辅助函数
+```scheme
+(define (filter predicate sequence)
+  (cond [(null? sequence) nil]
+        [(predicate (car sequence)) (cons (car sequence)
+                                          (filter predicate (cdr sequence)))]
+        [else (filter predicate (cdr sequence))]))
+
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (enumerate-interval low high)
+  (if (> low high)
+      nil
+      (cons low (enumerate-interval (+ low 1) high))))
+
+(define (enumerate-tree tree)
+  (cond [(null? tree) nil]
+        [(not (pair? tree)) (list tree)]
+        [else (append (enumerate-tree (car tree))
+                      (enumerate-tree (cdr tree)))]))
+```
+
+## 实例 重新实现的 `sum-odd-squares` 和 `even-fibs`
+```scheme
+(define (sum-odd-squares* tree)
+  (accumulate +
+              0
+              (map square
+                   (filter odd?
+                           (enumerate-tree tree)))))
+
+(define (even-fibs* n)
+  (define (fib-iter a b count)
+    (if (= count 0)
+        b
+        (fib-iter (+ a b) a (- count 1))))
+
+  (define (fib n) (fib-iter 1 0 n))
+
+  (accumulate cons
+              nil
+              (filter even?
+                      (map fib
+                           (enumerate-interval 0 n)))))
+```
+
+## 练习 2.33 将一些基本的表操作看作累积的定义
+```scheme
+(define (map* p sequence)
+  (accumulate (lambda (x rest) (cons (p x) rest)) nil sequence))
+
+(define (append* seq1 seq2)
+  (accumulate cons seq2 seq1))
+
+(define (length** sequence)
+  (accumulate (lambda (x y) (+ y 1)) 0 sequence))
+```
+
+## 练习 2.34 Horner 规则
+对于 $x$ 的某个给定值，求出一个多项式在 $x$ 的值，也可以形式化为一种累积。假定需要求下面的多项式：
+
+$$
+a_nx^n + a_{n-1}x^{n-1} + \cdots + a_1x + a_0
+$$
+
+采用著名的 Horner 规则，可以构造出下面的计算：
+
+$$
+(\cdots (a_nx + a_{n - 1})x + \cdots + a_1)x + a_0
+$$
+
+```scheme
+(define (horner-eval x coefficient-sequence)
+  (accumulate (lambda (this-coeff higher-terms) (+ (* higher-terms x) this-coeff))
+              0
+              coefficient-sequence))
+```
+
+## 练习 2.35 将 `count-leaves` 重新定义为一个累积
+```scheme
+(define (count-leaves* t)
+  (accumulate + 0 (map (lambda (root)
+                         (cond [(null? root) 0]
+                               [(not (pair? root)) 1]
+                               [else (+ (count-leaves (car root))
+                                        (count-leaves (cdr root)))])) t)))
+```
+
+## 练习 2.36 定义 `accumulate-n`
+```scheme
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs))
+      nil
+      (cons (accumulate op init (map car seqs))
+            (accumulate-n op init (map cdr seqs)))))
+```
+
+## 练习 2.37 矩阵操作
+```scheme
+(define (dot-product v w)
+  (accumulate + 0 (map * v w)))
+
+(define (matrix-*-vector m v)
+  (map (lambda (r) (dot-product r v)) m))
+
+(define (transpose mat)
+  (accumulate-n cons '() mat))
+
+(define (matrix-*-matrix m n)
+  (let ([cols (transpose n)])
+    (map (lambda (r)
+           (map (lambda (c)
+                  (dot-product r c)) cols)) m)))
+```
+
+## 练习 2.38 `fold-right`
+```scheme
+(define (fold-left op initial sequence)
+  (define (iter result rest)
+    (if (null? rest)
+        result
+        (iter (op result (car rest))
+              (cdr rest))))
+  (iter initial sequence))
+
+(define (fold-right op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(fold-right / 1 (list 1 2 3))
+; 3/2
+
+(fold-left / 1 (list 1 2 3))
+; 1/6
+
+(fold-right list nil (list 1 2 3))
+'(1 (2 (3 ())))
+
+(fold-left list nil (list 1 2 3))
+'(((() 1) 2) 3)
+```
+`op` 满足交换率时， `fold-right` 和 `fold-left` 在任何序列上都产生相同的结果
+
+## 练习 2.39 分别使用 `fold-right` 和 `fold-left` 实现 `reverse`
+```scheme
+(define (reverse* sequence)
+  (fold-right (lambda (x y) (append y (list x))) nil sequence))
+
+(define (reverse** sequence)
+  (fold-left (lambda (x y) (cons y x)) nil sequence))
+```
+
+## 实例 找出和为质数的序对
+```scheme
+(define (smallest-divisor n)
+  (find-divisor n 2))
+
+(define (divides? a b)
+  (= (remainder b a) 0))
+
+(define (find-divisor n test-divisor)
+  (cond [(> (square test-divisor) n) n]
+        [(divides? test-divisor n) test-divisor]
+        [else (find-divisor n (+ test-divisor 1))]))
+
+(define (prime? n)
+  (if (= n 1) #f
+      (= n (smallest-divisor n))))
+
+(define (prime-sum? pair)
+  (prime? (+ (car pair) (cadr pair))))
+
+(define (make-pair-sum pair)
+  (list (car pair) (cadr pair) (+ (car pair) (cadr pair))))
+
+(define (prime-sum-pairs n)
+  (map make-pair-sum
+       (filter prime-sum?
+               (flatmap
+                (lambda (i)
+                  (map (lambda (j) (list i j))
+                       (enumerate-interval 1 (- i 1))))
+                (enumerate-interval 1 n)))))
+```
+
+## 实例 生成集合元素的所有排列
+```scheme
+(define (permutations s)
+  (if (null? s)
+      (list nil)
+      (flatmap (lambda (x)
+                 (map (lambda (p) (cons x p))
+                      (permutations (remove x s))))
+               s)))
+
+(define (remove item sequence)
+  (filter (lambda (x) (not (= x item)))
+          sequence))
+```
+
+## 练习 2.40 `unique-pairs`
+```scheme
+(define (unique-pairs n)
+  (flatmap (lambda (i)
+             (map (lambda (j) (list i j))
+                  (enumerate-interval 1 (- i 1))))
+           (enumerate-interval 1 n)))
+
+(define (prime-sum-pairs n)
+  (map make-pair-sum
+       (filter prime-sum? (unique-pairs n))))
+```
+
+## 练习 2.41 所有小于等于给定整数 $n$ 的正相异整数组成的有序三元组，每个三元组的三个元之和为给定的整数 $s$
+```scheme
+(define (unique-triples n)
+  (flatmap (lambda (i)
+             (flatmap (lambda (j)
+                        (map (lambda (k) (list i j k))
+                             (enumerate-interval 1 (- j 1))))
+                      (enumerate-interval 1 (- i 1))))
+           (enumerate-interval 1 n)))
+
+(define (sum-n-triples n)
+  (define (sum lst) (fold-right (lambda (x y) (+ x y)) 0 lst))
+  (flatmap permutations
+           (filter (lambda (t) (= n (sum t)))
+                   (unique-triples n))))
+```
+
+## 练习 2.42 八皇后问题
+```scheme
+(define (all pre lst)
+  (if (null? lst)
+      #t
+      (and (pre (car lst))
+           (all pre (cdr lst)))))
+
+(define (make-board-position row col) (cons row col))
+(define (board-position-row pos) (car pos))
+(define (board-position-col pos) (cdr pos))
+
+(define empty-board '())
+
+(define (adjoin-position new-row k rest-of-queens)
+  (cons (make-board-position new-row k) rest-of-queens))
+
+(define (safe? k positions)
+  (let ([new-queen-position (car positions)]
+        [rest-queen-positions (cdr positions)])
+    (and (all (lambda (pos) (not (= (board-position-row new-queen-position)
+                                     (board-position-row pos))))
+               rest-queen-positions)
+         (all (lambda (pos) (not (= (board-position-col new-queen-position)
+                                     (board-position-col pos))))
+               rest-queen-positions)
+         (all (lambda (pos)
+                 (let ([delta-row (- (board-position-row new-queen-position) (board-position-row pos))]
+                       [delta-col (- (board-position-col new-queen-position) (board-position-col pos))])
+                   (not (= (abs delta-row) (abs delta-col)))))
+               rest-queen-positions))))
+
+(define (queens board-size)
+  (define (queen-cols k)
+    (if (= k 0)
+        (list empty-board)
+        (filter (lambda (positions) (safe? k positions))
+                (flatmap (lambda (rest-of-queens)
+                           (map (lambda (new-row)
+                                  (adjoin-position new-row k rest-of-queens))
+                                (enumerate-interval 1 board-size)))
+                         (queen-cols (- k 1))))))
+  (queen-cols board-size))
+
+```
+
+## 练习 2.43 Louis Reasoner 遇到的问题
+```scheme
+(define (louis-queens board-size)
+  (define (queen-cols k)
+    (if (= k 0)
+        (list empty-board)
+        (filter (lambda (positions) (safe? k positions))
+                (flatmap (lambda (new-row)
+                           (map (lambda (rest-of-queens)
+                                  (adjoin-position new-row k rest-of-queens))
+                                (queen-cols (- k 1))))
+                         (enumerate-interval 1 board-size)))))
+  (queen-cols board-size))
+```
+调用 `queen-cols` 的次数翻了 `board-size` 倍
+
+## 练习 2.44 定义 `corner-split` 中使用的过程 `up-split`
+```scheme
+(define (up-split painter n)
+  (if (= n 0)
+      painter
+      (let ([smaller (up-split painter (- n 1))])
+        (below painter (beside smaller smaller)))))
+```
+
+# 2.3 符号数据
+
+## `memq` 的实现
+
+<SchemeCode client:load code={`
+(define (memq item x)
+  (cond [(null? x) #f]
+        [(eq? item (car x)) x]
+        [else (memq item (cdr x))]))
+        
+(list (memq 'apple '(pear banana prune))
+      (memq 'apple '(x (apple sauce) y apple pear)))
+`} />
+
+## 练习 2.53 解释器在求值下面各表达式时将打印出什么
+<SchemeCode client:load code={`
+(display (list 'a 'b 'c)) (newline)
+(display (list (list 'george))) (newline)
+(display (cdr '((x1 x2) (y1 y2)))) (newline)
+(display (cadr '((x1 x2) (y1 y2)))) (newline)
+(display (pair? (car '(a short list)))) (newline)
+(display (memq 'red '((red shoes) (blue socks)))) (newline)
+(display (memq 'red ((red shoes blue socks)))) (newline)
+`}/>
+
+## 练习 2.54 `equal?` 的定义
+<SchemeCode client:load code={`
+(define (equals? x y)
+  (cond [(and (pair? x) (pair? y))
+         (and (equals? (car x) (car y))
+              (equals? (cdr x) (cdr y)))]
+        [else (eq? x y)]))
+
+(list (equals? '(this is a list) '(this is a list))
+      (equals? '(this is a list) '(this (is a) list)))
+`} />
+
+## 练习 2.54 `(car ''abracadabra)` 的输出为 `quote`
+<SchemeCode client:load code={`
+(car ''abracadabra)
+`} />
+
+```scheme
+(car ''abracadabra)
+=> (car (quote (quote abracadabra)))
+=> (car '(quote abracadabra))
+=> 'quote
+```
+
+## 实例 符号求导
+$$
+\newcommand{\deriv}[2]{\frac{\mathrm{d} #1}{\mathrm{d} #2}}
+
+\begin{aligned}
+\deriv{c}{x} &= 0 \\
+\deriv{x}{x} &= 1 \\
+\deriv{\left( u + v \right)}{x} &= \deriv{u}{x} + \deriv{v}{x} \\
+\deriv{uv}{x} &= u\left( \deriv{v}{x} \right) + v \left(\deriv{u}{x}\right) \\
+\deriv{u^n}{x} &= nu^{n-1}\left( \deriv{u}{x} \right)
+\end{aligned}
+$$
+
+<SchemeCode client:load code={`
+; 变量 => 符号
+(define (variable? x) (symbol? x))
+
+; 两个变量相同 => 符号相同
+(define (same-variable? v1 v2)
+  (and (variable? v1) (variable? v2) (eq? v1 v2)))
+
+; 和式与乘式都构造为表
+(define (=number? exp num)
+  (and (number? exp) (= exp num)))
+
+(define (make-sum a1 a2)
+  (cond [(=number? a1 0) a2]
+        [(=number? a2 0) a1]
+        [(and (number? a1) (number? a2)) (+ a1 a2)]
+        [else (list '+ a1 a2)]))
+
+(define (make-product m1 m2)
+  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+        [(=number? m1 1) m2]
+        [(=number? m2 1) m1]
+        [(and (number? m1) (number? m2)) (* m1 m2)]
+        [else (list '* m1 m2)]))
+
+; 和式 => 第一个元素为符号 + 的表
+(define (sum? x)
+  (and (pair? x) (eq? (car x) '+)))
+
+; 被加数 => 表示和式的表里的第二个元素
+(define (addend s) (cadr s))
+
+; 加数 => 表示和式的表里的第三个元素
+(define (augend s) (caddr s))
+
+; 乘式 => 第一个元素为符号 * 的表
+(define (product? x)
+  (and (pair? x) (eq? (car x) '*)))
+
+; 被乘数 => 表示乘式的表里的第二个元素
+(define (multiplier p) (cadr p))
+
+; 乘数 => 表示乘式的表里的第三个元素
+(define (multiplicand p) (caddr p))
+
+(define (deriv exp var)
+  (cond [(number? exp) 0]
+        [(variable? exp)
+         (if (same-variable? exp var) 1 0)]
+        [(sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var))]
+        [(product? exp)
+         (make-sum (make-product (multiplier exp)
+                                 (deriv (multiplicand exp) var))
+                   (make-product (deriv (multiplier exp) var)
+                                 (multiplicand exp)))]
+        [else
+         (error "unknown expression type -- DERIV" exp)]))
+
+(list (deriv '(+ x 3) 'x)
+      (deriv '(* x y) 'x)
+      (deriv '(* (* x y) (+ x 3)) 'x))
+`} />
+
+## 练习 2.56 扩充指数的求导规则
+<SchemeCode client:load code={`
+(define (variable? x) (symbol? x))
+(define (same-variable? v1 v2) (and (variable? v1) (variable? v2) (eq? v1 v2)))
+(define (=number? exp num)
+  (and (number? exp) (= exp num)))
+(define (make-sum a1 a2)
+  (cond [(=number? a1 0) a2]
+        [(=number? a2 0) a1]
+        [(and (number? a1) (number? a2)) (+ a1 a2)]
+        [else (list '+ a1 a2)]))
+(define (make-product m1 m2)
+  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+        [(=number? m1 1) m2]
+        [(=number? m2 1) m1]
+        [(and (number? m1) (number? m2)) (* m1 m2)]
+        [else (list '* m1 m2)]))
+(define (sum? x)
+  (and (pair? x) (eq? (car x) '+)))
+(define (addend s) (cadr s))
+(define (augend s) (caddr s))
+(define (product? x)
+  (and (pair? x) (eq? (car x) '*)))
+(define (multiplier p) (cadr p))
+(define (multiplicand p) (caddr p))
+
+(define (exponentiation? x) (and (pair? x) (eq? (car x) 'expt)))
+
+(define (base x) (and (pair? x) (cadr x)))
+
+(define (exponent x) (and (pair? x) (caddr x)))
+
+(define (make-exponentiation base exponent)
+  (cond [(=number? base 0) 0]
+        [(=number? base 1) 1]
+        [(=number? exponent 0) 1]
+        [(=number? exponent 1) base]
+        [else (list 'expt base exponent)]))
+
+(define (deriv exp var)
+  (cond [(number? exp) 0]
+        [(variable? exp)
+         (if (same-variable? exp var) 1 0)]
+        [(sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var))]
+        [(product? exp)
+         (make-sum (make-product (multiplier exp)
+                                 (deriv (multiplicand exp) var))
+                   (make-product (deriv (multiplier exp) var)
+                                 (multiplicand exp)))]
+        [(exponentiation? exp)
+         (make-product (exponent exp)
+                       (make-exponentiation (base exp)
+                                            (- (exponent exp) 1)))]
+        [else
+         (error "unknown expression type -- DERIV" exp)]))
+
+(deriv '(expt (- x 1) 2) 'x)
+`}/>
+
+
+## 练习 2.57 扩充求导程序，使之能处理任意数量项的和与乘积
+> Hint: 只修改和与乘积的表示，而完全不修改过程 `deriv` 的方式完成这一扩充
