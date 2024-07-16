@@ -5,11 +5,39 @@ pubDate: "Jul 11 2024"
 ---
 
 import SchemeCode from "../../components/SchemeCode.tsx"
+import Todo from "../../components/Todo.astro"
 
 # 1.1 程序设计的基本元素
 
-## 练习 1.2 将下面的表达式变换为前缀形式
+- **应用序**：先求值参数而后应用，先不求出运算对象的值，直到实际需要它们的值时再去做。
+- **正则序**：完全展开而后归约，首先对运算符和各个运算对象求值，而后将得到的过程应用于得到的实际参数。
 
+## 练习 1.1
+<SchemeCode client:load code={`
+(define a 3)
+(define b (+ a 1))
+
+(list 10
+      (+ 5 3 4)
+      (- 9 1)
+      (/ 6 2)
+      (+ (* 2 4) (- 4 6))
+      (+ a b (* a b))
+      (= a b)
+      (if (and (> b a) (< b (* a b))) b a)
+      (cond [(= a 4) 6]
+            [(= b 4) (+ 6 7 a)]
+            [else 25])
+      (+ 2 (if (> b a) b a))
+      (+ (cond [(> a b) a]
+               [(< a b) b]
+               [else -1])
+         (+ a 1)))
+`}/>
+
+## 练习 1.2
+
+将下面的表达式变换为前缀形式
 $$
 \frac
   {5+4+\left(2-\left(3-\left(6+\frac{4}{5}\right)\right)\right)}
@@ -21,7 +49,9 @@ $$
    (* 3 (- 6 2) (- 2 7)))
 `}/>
 
-## 练习 1.3 定义一个过程，它以三个数作为参数，返回这较大的两个数之和
+## 练习 1.3
+
+定义一个过程，它以三个数作为参数，返回这较大的两个数之和
 
 <SchemeCode client:load code={`
 (define (sum-of-max-two a b c)
@@ -32,7 +62,36 @@ $$
 (sum-of-max-two 1 2 3)
 `}/>
 
-## 实例：牛顿法求平方根
+## 练习 1.4
+<SchemeCode client:load code={`
+(define (a-plus-abs-b a b)
+  ((if (> b 0) + -) a b))
+
+(list (a-plus-abs-b 1 1)
+      (a-plus-abs-b 1 -1))
+`}/>
+
+这一过程中根据参数 `b` 的值来确定对参数 `a` `b` 应用的过程，如果 $b > 0$，则应用 `+` 过程；若 $b < 0$，则应用 `-` 过程。
+
+## 练习 1.5
+
+判定解释器采用的是应用序还是正则序
+
+```scheme
+(define (p) (p))
+
+(define (test x y)
+  (if (= x 0)
+      0
+      y))
+
+(test 0 (p))
+```
+
+`p` 是一个死循环。如果采用应用序，则 `p` 必定会被求值，因此程序一定会卡死。如果采用正则序求值，当 `test` 函数的输入为 `0` 时，`if` 的条件满足，过程 `p` 不会被执行，程序输出 `0`。
+
+## 实例 牛顿法求平方根
+如果对 $x$ 的平方根的值有了一个猜测 $y$，那么就可以得到一个更好的猜测： $\frac{y + x/y}{2}$
 <SchemeCode client:load code={`
 (define (sqrt-iter guess x)
   (if (good-enough? guess x)
@@ -57,9 +116,28 @@ $$
 (sqrt 9)
 `}/>
 
-
-## 练习 1.8 牛顿法求立方根
+## 练习 1.6
 ```scheme
+(define (new-if predicate then-clause else-clause)
+  (cond [predicate then-clause]
+        [else else-clause]))
+```
+若采用应用序执行，无论判定条件如何， `then-clause` 和 `else-clause` 都一定会被执行，如果用 `new-if` 重写平方根程序，由于递归会无条件执行，程序永远无法终止。
+
+## 练习 1.7
+<Todo />
+
+## 练习 1.8
+
+牛顿法求立方根
+
+如果 $y$ 是 $x$ 的立方根的一个近似值，那么下式将给出一个更好的近似值
+
+$$
+  \frac{x/y^2 + 2y}{3}
+$$
+
+<SchemeCode client:load code={`
 (define (cube-root-iter guess x)
   (if (good-enough? guess x)
       guess
@@ -78,11 +156,13 @@ $$
   (* x x x))
 
 (define (cube-root x) (cube-root-iter 1.0 x))
-```
+
+(cube-root 27)
+`} />
 
 ## 实例 内部定义与块结构
 
-```scheme
+<SchemeCode client:load code={`
 (define (sqrt x)
   (define (square x) (* x x))
   (define (average x y) (/ (+ x y) 2))
@@ -95,9 +175,96 @@ $$
         guess
         (sqrt-iter (improve guess x) x)))
   (sqrt-iter 1.0 x))
+
+(sqrt 9)
+`} />
+
+# 1.2 过程及其产生的计算
+
+## 实例 求阶乘函数
+$$
+n! = n \cdot (n - 1) \cdot (n - 2) \dots 3 \cdot 2 \cdot 1
+$$
+
+递归实现
+
+$$
+n! = n \cdot [(n - 1) \cdot (n - 2) \dots 3 \cdot 2 \cdot 1] = n \cdot (n - 1)!
+$$
+
+<SchemeCode client:load code={`
+(define (factorial n)
+  (if (= n 1)
+      1
+      (* n (factorial (- n 1)))))
+
+(factorial 6)
+`} />
+
+求值过程 
+```scheme
+(factorial 6)
+(* 6 (factorial 5))
+(* 6 (* 5 (factorial 4)))
+(* 6 (* 5 (* 4 (factorial 3))))
+(* 6 (* 5 (* 4 (* 3 (factorial 2)))))
+(* 6 (* 5 (* 4 (* 3 (* 2 (factorial 1))))))
+(* 6 (* 5 (* 4 (* 3 (* 2 1)))))
+(* 6 (* 5 (* 4 (* 3 2))))
+(* 6 (* 5 (* 4 6)))
+(* 6 (* 5 24))
+(* 6 120)
+720
 ```
 
-## 练习1.9 对比递归和迭代产生的计算过程
+迭代实现
+$$
+\begin{aligned}
+\mathrm{product} & \gets \mathrm{counter} \cdot \mathrm{product} \\
+\mathrm{counter} & \gets \mathrm{counter} + 1
+\end{aligned}
+$$
+
+<SchemeCode client:load code={`
+(define (factorial n)
+  (define (fact-iter product counter max-count)
+    (if (> counter max-count)
+        product
+        (fact-iter (* counter product)
+                   (+ counter 1)
+                   max-count)))
+  (fact-iter 1 1 n))
+
+(factorial 6)
+`}/>
+
+
+求值过程
+
+```scheme
+(factorial 6)
+(fact-iter 1 1 6)
+(fact-iter 1 2 6)
+(fact-iter 2 3 6)
+(fact-iter 6 4 6)
+(fact-iter 24 5 6)
+(fact-iter 120 6 6)
+(fact-iter 720 7 6)
+720
+```
+## 练习1.9
+
+加法的递归版本
+<SchemeCode client:load code={`
+(define (inc x) (+ x 1))
+(define (dec x) (- x 1))
+(define (add a b)
+  (if (= a 0)
+      b
+      (inc (add (dec a) b))))
+
+(add 4 5)
+`} />
 
 ```scheme
 (+ 4 5)
@@ -110,7 +277,21 @@ $$
 (inc (inc 7))
 (inc 8)
 9
+```
 
+加法的迭代版本
+<SchemeCode client:load code={`
+(define (inc x) (+ x 1))
+(define (dec x) (- x 1))
+(define (add a b)
+  (if (= a 0)
+      b
+      (add (dec a) (inc b))))
+
+(add 4 5)
+`} />
+
+```scheme
 (+ 4 5)
 (+ 3 6)
 (+ 2 7)
@@ -119,33 +300,117 @@ $$
 9
 ```
 
-## 练习1.10 Ackermann 函数
+## 练习1.10
 
-TODO
+Ackermann 函数
 
-## 实例 斐波那契数列的树形递归与迭代实现
+$$
+\mathrm{A}(x, y) =
+  \begin{cases}
+    0 &, y = 0 \\
+    2 y & , x = 0 \\
+    2 & , y = 1 \\
+    \mathrm{A}(x - 1, \mathrm{A}(x, (y - 1))) & , other
+  \end{cases}
+$$
+
+<SchemeCode client:load code={`
+(define (A x y)
+  (cond [(= y 0) 0]
+        [(= x 0) (* 2 y)]
+        [(= y 1) 2]
+        [else (A (- x 1)
+                 (A x (- y 1)))]))
+
+(list (A 1 10)
+      (A 2 4)
+      (A 3 3))
+`} />
 
 ```scheme
+(A 1 10)
+(A (A 0 (A 1 9)))
+(A (A 0 (A 0 (A 1 8))))
+(A (A 0 (A 0 (A 0 (A 1 7)))))
+(A (A 0 (A 0 (A 0 (A 0 (A 1 6))))))
+(A (A 0 (A 0 (A 0 (A 0 (... (A 1 1)))))))
+
+(A 1 1) => 2
+(A 0 y) => (* 2 y)
+(A 1 10) => (expt 2 10)
+1024
+
+(A 2 4)
+(A 1 (A 2 3))
+(A 1 (A 1 (A 2 2)))
+(A 1 (A 1 (A 1 (A 2 1))))
+(A 1 (A 1 (A 1 2)))
+(A 1 (A 1 (expt 2 2)))
+(A 1 (A 1 4))
+(A 1 (expt 2 4))
+(A 1 16)
+(expt 2 16)
+65536
+
+(A 3 3)
+(A 2 (A 3 2))
+(A 2 (A 2 (A 3 1)))
+(A 2 (A 2 2))
+(A 2 (expt 2 2))
+(A 2 4)
+(expt 2 (expt 2 (expt 2 2)))
+65536
+```
+
+$$
+\begin{aligned}
+  \mathrm{A}(0, n) &= 2 \\
+  \mathrm{A}(1, n) &= 2^n \\
+  \mathrm{A}(2, n) &= \underbrace{2^{\cdot^{\cdot^{\cdot^2}}}}_n
+\end{aligned}
+$$
+
+## 实例 斐波那契数列
+
+<SchemeCode client:load code={`
 (define (fib n)
   (cond ((= n 0) 0)
         ((= n 1) 1)
         (else (+ (fib (- n 1))
                  (fib (- n 2))))))
-```
 
-```scheme
-(define (fib* n)
+(define (f n)
+  (define (g i) 
+    (if (= i n)
+        (cons (fib i) '())
+        (cons (fib i) (g (+ i 1)))))
+  (g 1))
+
+(f 10)
+`} />
+
+<SchemeCode client:load code={`
+(define (fib n)
   (define (fib-iter a b count)
     (if (= count 0)
         b
         (fib-iter (+ a b) a (- count 1))))
 
   (fib-iter 1 0 n))
-```
+
+(define (f n)
+  (define (g i) 
+    (if (= i n)
+        (cons (fib i) '())
+        (cons (fib i) (g (+ i 1)))))
+  (g 1))
+
+(f 10)
+`} />
 
 ## 实例 换零钱方式的统计
 
-```scheme
+<SchemeCode client:load code={`
 (define (count-change amount)
   (cc amount 5))
 
@@ -163,13 +428,20 @@ TODO
         ((= kinds-of-coins 3) 10)
         ((= kinds-of-coins 4) 25)
         ((= kinds-of-coins 5) 50)))
-```
-## 练习 1.11 使用递归和迭代计算函数 $f$
 
-```scheme
-; n < 3 => f(n) = n
-; n >= 3 => f(n) = f(n - 1) + 2f(n - 2) + 3f(n - 3)
+(count-change 100)
+`} />
 
+## 练习 1.11
+
+$$
+f = \begin{cases}
+n &, n < 3 \\
+f(n - 1) + 2 f(n - 2) + 3 f(n - 3) &, n \ge 3
+\end{cases}
+$$
+
+<SchemeCode client:load code={`
 (define (f n)
   (if (< n 3)
       n
@@ -177,21 +449,28 @@ TODO
          (* 2 (f (- n 2)))
          (* 3 (f (- n 3))))))
 
+(f 10)
+`} />
 
-(define (f* n)
-  (define (f*-iter i f*-n-one f*-n-two f*-n-three)
+<SchemeCode client:load code={`
+(define (f n)
+  (define (f-iter i f-n-1 f-n-2 f-n-3)
     (if (> i n)
-        f*-n-one
-        (f*-iter (+ i 1)
-                 (+ f*-n-one (* 2 f*-n-two) (* 3 f*-n-three))
-                 f*-n-one
-                 f*-n-two)))
-  (cond ((< n 3) n)
-        (else
-         (f*-iter 3 2 1 0))))
-```
+        f-n-1
+        (f-iter (+ i 1)
+                (+ f-n-1 (* 2 f-n-2) (* 3 f-n-3))
+                f-n-1
+                f-n-2)))
+  (if (< n 3)
+      n
+      (f-iter 3 2 1 0)))
+(f 10)
+`}/>
 
-## 练习 1.12 计算帕斯卡三角形
+## 练习 1.12
+
+计算帕斯卡三角形
+
 <SchemeCode client:load code={`
 (define (pascal-triangle n-row n-col)
   (if (= n-row 1)
@@ -218,44 +497,147 @@ TODO
 (print-pascal-triangle 5)
 `}/>
 
-## 练习 1.13证明 $Fib(n)$ 是最接近 $\Phi/\sqrt{5}$ 的整数
-TODO
+## 练习 1.13
+$$
+\phi = \frac{1+\sqrt{5}}{2},\ \psi = \frac{1-\sqrt{5}}{2}
+$$
+
+令$ f(x) = \frac{\phi^2 - \psi^2}{\sqrt{5}} $
+
+$$
+\begin{aligned}
+f(1)
+&= \frac{\phi - \psi}{\sqrt{5}}
+= \frac{1+\sqrt{5} - (1-\sqrt{5})}{2\sqrt{5}}
+= \frac{2\sqrt{5}}{2\sqrt{5}}
+= 1
+= \mathrm{Fib}(1) \\
+
+f(2)
+&= \frac{\phi^2 - \psi^2}{\sqrt{5}}
+= \frac{(1+\sqrt{5})^2 - (1-\sqrt{5})^2}{4\sqrt{5}}
+= \frac{4\sqrt{5}}{4\sqrt{5}}
+= 1
+= \mathrm{Fib}(2)
+\end{aligned}
+$$
+
+假设 $ \mathrm{Fib}(n) = f(n) $
+
+$$
+\newcommand{\Fib}{\mathrm{Fib}}
+
+\begin{split}
+\Fib(n) &= \Fib(n - 1) + \Fib(n - 2) \\
+&= f(n - 1) + f(n - 1) \\
+&= \frac{(\phi^{n - 1} - \psi^{n - 1}) + (\phi^{n - 2} - \psi^{n - 2})}{\sqrt{5}} \\
+&= \frac{(\phi^{n - 1} + \phi^{n - 2}) - (\psi^{n - 1} + \psi^{n - 2})}{\sqrt{5}} \\
+&= \frac{\phi^n(\phi^{-1} + \phi^{-2}) - \psi^n(\psi^{-1} + \psi^{-2})}{\sqrt{5}}
+\end{split}
+$$
+
+$$
+\begin{aligned}
+\phi^{-1} + \phi^{-2} &= \frac{2}{1 + \sqrt{5}} + \frac{4}{1 + (\sqrt{5})^2} = \frac{6 + 2\sqrt{5}}{6 + 2\sqrt{5}} = 1 \\
+\psi^{-1} + \psi^{-2} &= \frac{2}{1 - \sqrt{5}} + \frac{4}{(1 - \sqrt{5})^2} = \frac{6 - 2\sqrt{5}}{6 - 2\sqrt{5}} = 1
+\end{aligned}
+$$
+
+$$
+\mathrm{Fib}(n) = \frac{\phi^n - \psi^n}{\sqrt{5}} 
+$$
+
+$ \mathrm{Fib}(n) = f(n) $ 成立
+
+$$
+\newcommand{\Fib}{\mathrm{Fib}}
+
+\begin{split}
+\left| \Fib(n) - \frac{\phi^n}{\sqrt{5}} \right|
+&= \left| \frac{\phi^n - \psi^n}{\sqrt{5}} - \frac{\phi^n}{\sqrt{5}} \right| \\
+&= \left| - \frac{\psi^n}{\sqrt{5}} \right| \\
+&= \frac{(\sqrt{5} - 1)^n}{2^n\sqrt{5}}
+\end{split}
+$$
+
+当 $ n \in [1, \infty] $ 时，
+
+$$
+\newcommand{\Fib}{\mathrm{Fib}}
+\left| \Fib(n) - \frac{\phi^n}{\sqrt{5}} \right| < \frac{1}{2}
+$$
+
+成立
+
 
 ## 练习 1.14
-$$
-2^n
-$$
+<Todo/>
 
-## 练习1.15
-TODO
+## 练习 1.15
+<Todo />
 
 ## 实例 求幂
 
-```scheme
+直接翻译为递归定义
+$$
+\begin{aligned}
+b^n &= b \cdot b^{n - 1} \\
+b^0 &= 1
+\end{aligned}
+$$
+
+<SchemeCode client:load code={`
 (define (expt b n)
   (if (= n 0)
       1
       (* b (expt b (- n 1)))))
 
-(define (expt* b n)
+(expt 2 8)
+`} />
+
+
+使用迭代实现
+<SchemeCode client:load code={`
+(define (expt b n)
   (define (iter b counter product)
     (if (= counter 0)
         product
         (iter b (- counter 1) (* product b))))
   (iter b n 1))
 
-(define (fast-expt* b n)
-  (define (fast-expt-iter a b n)
-    (cond [(= n 0) a]
-          [(even? n) (fast-expt-iter a (square b) (/ n 2))]
-          [else (fast-expt-iter (* a b) b (- n 1))]))
+(expt 2 8)
+`} />
 
-  (fast-expt-iter 1 b n))
-```
+通过连续求平方，使用更少的步骤完成乘幂运算
 
-## 练习 1.16 将快速求幂函数修改为迭代实现
 $$
-a(b^n) = a(b^\frac{n}{2})^2 = a(b^2)^\frac{n}{2} = a'b'^{n'}
+b^n = \begin{cases}
+(b^{n/2})^2 &, n \text{是偶数} \\
+b^n=b \cdot b^{n - 1} &,n \text{是奇数}
+\end{cases}
+$$
+
+<SchemeCode client:load code={`
+(define (fast-expt b n)
+  (define (square x) (* x x))
+  (cond [(= n 0) 1]
+        [(even? n) (square (fast-expt b (/ n 2)))]
+        [else (* b (fast-expt b (- n 1)))]))
+
+(fast-expt 2 8)
+`} />
+
+
+## 练习 1.16
+
+将快速求幂函数修改为迭代实现
+
+> **定义一个不变量，要求它在状态之间保持不变，这一技术是思考迭代算法设计问题时的一种非常强有力的方法**
+
+当 $n$ 为偶数时
+
+$$
+a(b^n) = a(b^{n/2})^2 = a(b^2)^{n/2} = a'b'^{n'}
 $$
 
 $$
@@ -265,6 +647,8 @@ b' &= b^2 \\
 n' &= n/2
 \end{aligned}
 $$
+
+当 $n$ 为奇数时
 
 $$
 a(b^n) = a b b^{n - 1} = (a b)b^{n - 1} = a'b'^{n'}
@@ -278,29 +662,48 @@ n' &= n - 1
 \end{aligned}
 $$
 
-> [!NOTE]
-> 定义一个不变量，要求它在状态之间保持不变，这一技术是思考迭代算法设计问题时的一种非常强有力的方法
-
-```scheme
-(define (fast-expt* b n)
+<SchemeCode client:load code={`
+(define (fast-expt b n)
+  (define (square x) (* x x))
   (define (fast-expt-iter a b n)
     (cond [(= n 0) a]
           [(even? n) (fast-expt-iter a (square b) (/ n 2))]
           [else (fast-expt-iter (* a b) b (- n 1))]))
 
   (fast-expt-iter 1 b n))
-```
 
-## 练习 1.17 使用累加法求乘积
+(fast-expt 2 8)
+`} />
+
+## 练习 1.17
+
+使用累加法求乘积
+
 $$
-a \times b = a + a \times (b - 1)
+a \cdot b = a + a \cdot (b - 1)
 $$
-```scheme
+
+<SchemeCode client:load code={`
 (define (* a b)
   (if (= b 0)
       0
       (+ a (* a (- b 1)))))
 
+(* 2 8)
+`} />
+
+利用 `double` 和 `halve` 在对数时间内求乘积
+
+$$
+a \cdot b =
+\begin{cases}
+(2 \cdot a) \cdot (\frac{1}{2} \cdot b) &, b \text{是偶数} \\
+a \cdot (b - 1) + a &, b \text{是奇数} \\
+a &, b = 1
+\end{cases}
+$$
+
+<SchemeCode client:load code={`
 (define (double x) (* 2 x))
 (define (halve x) (/ x 2))
 
@@ -308,32 +711,37 @@ $$
   (cond [(= b 1) a]
         [(even? b) (double (fast-mul a (halve b)))]
         [else (+ a (fast-mul a (- b 1)))]))
-```
 
-## 练习 1.18 将 1.17 改为迭代实现/俄罗斯农民
-`(even? b)`
+(fast-mul 2 8)
+`} />
 
-$$
-a \times b + c = (a \times 2) \times (b \div 2) + c
-$$
+## 练习 1.18
 
-`(odd? b)`
+将 1.17 改为迭代实现
 
 $$
-a \times b + c = a \times (b - 1) + (c + a)
+a \times b + c = \begin{cases}
+(a \cdot 2) \cdot (\frac{1}{2} \cdot b) + c &,\ b \text{为偶数} \\
+a \times (b - 1) + (c + a) &,\ b \text{为奇数} \\
+c &,\ b = 0
+\end{cases}
 $$
 
-```scheme
-(define (fast-mul* a b)
+<SchemeCode client:load code={`
+(define (double x) (* 2 x))
+(define (halve x) (/ x 2))
+
+(define (fast-mul a b)
   (define (fast-mul-iter a b c)
     (cond [(= b 0) c]
           [(even? b) (fast-mul-iter (double a) (halve b) c)]
           [else (fast-mul-iter a (- b 1) (+ c a))]))
   (fast-mul-iter a b 0))
 
-```
+(fast-mul 3 4)
+`} />
 
-## 练习1.19
+## 练习 1.19
 $$
 \begin{aligned}
 a &\gets b q + a q + a p \\
@@ -365,8 +773,9 @@ q' &= q^2 + 2 p q
 \end{aligned}
 $$
 
-```scheme
+<SchemeCode client:load code={`
 (define (fib n)
+  (define (square x) (* x x))
   (define (fib-iter a b p q count)
     (cond [(= count 0) b]
           [(even? count) (fib-iter a
@@ -380,21 +789,28 @@ $$
                           q
                           (- count 1))]))
   (fib-iter 1 0 0 1 n))
-```
+
+(define (f n)
+  (define (g i) 
+    (if (= i n)
+        (cons (fib i) '())
+        (cons (fib i) (g (+ i 1)))))
+  (g 1))
+
+(f 10)
+`} />
 
 ## 练习1.20 使用正则序和应用序时 `remainder` 的调用次数
 
-Normal Order: fully expand and then reduce
-TODO
-
-Applicative Order: evaluate the arguments and then apply
-TODO
+* Normal Order: fully expand and then reduce
+* Applicative Order: evaluate the arguments and then apply
 
 ## 实例 素数检测
 $$
 \Theta (\sqrt{n})
 $$
-```
+
+```scheme
 (define (smallest-divisor n)
   (find-divisor n 2))
 
