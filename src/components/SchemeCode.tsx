@@ -6,12 +6,24 @@ type SchemeCodeProps = {
   code: string
 }
 
+BiwaScheme.define_libfunc("random", 1, 1, (args: any) => {
+  return Math.floor(Math.random() * args[0])
+})
+
 const SchemeCode = ({ code }: SchemeCodeProps) => {
   const [codeHtml, setCodeHtml] = useState("")
   const [status, setStatus] = useState("pending")
   const [codeOutput, setCodeOutput] = useState<string | undefined>(undefined)
 
-  const biwa = useMemo(() => new BiwaScheme.Interpreter(), [])
+  const biwa = useMemo(
+    () =>
+      new BiwaScheme.Interpreter((err: any) => {
+        setCodeOutput(
+          `<span style="color: var(--red)">${err.toString()}</span>`
+        )
+      }),
+    []
+  )
 
   useEffect(() => {
     codeToHtml(code.trim(), {
@@ -45,18 +57,24 @@ const SchemeCode = ({ code }: SchemeCodeProps) => {
       setCodeOutput((prev) => prev + "<br>")
     })
 
-    const result = biwa.evaluate(code).toString()
-
-    setCodeOutput((prev) => (prev ?? "") + (prev ? "<br>" : "") + result)
+    biwa.evaluate(code, (result: any) => {
+      if (result) {
+        setCodeOutput(
+          (prev) =>
+            (prev ? prev + "<br>" : "") +
+            `<span style="color: var(--green)">${result.toString()}</span>`
+        )
+      }
+    })
   }
 
   const codeElement =
-    status === "pending" ? (
+    status === "done" ? (
+      <div dangerouslySetInnerHTML={{ __html: codeHtml }} />
+    ) : (
       <pre>
         <code>{code.trim()}</code>
       </pre>
-    ) : (
-      <div dangerouslySetInnerHTML={{ __html: codeHtml }} />
     )
 
   return (
@@ -70,8 +88,8 @@ const SchemeCode = ({ code }: SchemeCodeProps) => {
           Run
         </button>
       </div>
-      {codeOutput === undefined ? null : (
-        <div className="blog-border-pixel pt-1 px-2 mt-[-4px] !border-t-0">
+      {codeOutput && (
+        <div className="blog-border-pixel pt-1 px-2 mt-[-4px] !border-t-0 overflow-x-auto">
           <pre
             className="blog-font-mono leading-none"
             dangerouslySetInnerHTML={{ __html: codeOutput }}

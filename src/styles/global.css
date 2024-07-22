@@ -103,7 +103,7 @@ body {
 }
 
 .blog-font-pixel {
-	font-family: "Pixelify Sans", "Ark Pixel Fuse SC", "Noto Serif CJK SC", "SimSun";
+	font-family: "Ark Pixel Fuse SC", "Noto Serif CJK SC", "SimSun";
 }
 
 .blog-border-pixel {
@@ -217,6 +217,25 @@ a:hover::after {
 	image-rendering: pixelated;
 	padding: 0.5rem;
 	line-height: 1;
+}
+
+.md-body ol {
+	list-style-type: decimal;
+	list-style-position: inside;
+	margin-left: 1rem;
+}
+
+.md-body ul {
+	image-rendering: pixelated;
+	list-style-position: inside;
+	margin-left: 1rem;
+	list-style-image: url(/bullet-1-light.webp);
+}
+
+@media (prefers-color-scheme: dark) {
+	.md-body ul {
+		list-style-image: url(/bullet-1-dark.webp);
+	}
 }
 
 @media (prefers-color-scheme: dark) {
