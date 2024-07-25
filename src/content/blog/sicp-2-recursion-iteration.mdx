@@ -1,0 +1,899 @@
+---
+title: "SICP - 2 - 递归 vs. 迭代"
+description: "对应：SICP 1.2 过程及其产生的计算"
+pubDate: "Jul 24 2024"
+---
+
+import SchemeCode from "../../components/SchemeCode.tsx"
+import Todo from "../../components/Todo.astro"
+
+# 线性的递归和迭代
+对于已经熟悉 C 等过程式语言的我们来说，迭代和递归是泾渭分明的。迭代有着专门的结构，如 `for`、`while`，而递归就是函数自身调用自身的过程。
+
+SICP中给出了一种对于我们来说崭新的观点：一个算法是迭代的，还是递归的，取决于其产生的计算过程，迭代和递归在形式上并没有什么明显的差别。
+
+一种区分两种过程的方法是：
+- 对于迭代过程来说，只要知道了各个参数的值，我们就可以继续这个过程
+- 对于递归过程来说，只知道值并不能继续计算过程，因为递归结构本身记忆了一部分信息
+
+我们平时常说的尾递归，其实就是一种迭代的过程
+
+同时，本部分中还给出了使用代换模型来评估算法的时间和空间复杂度的方法。
+
+## 实例 求阶乘函数
+
+$$
+n! = n \cdot (n - 1) \cdot (n - 2) \dots 3 \cdot 2 \cdot 1
+$$
+
+### 递归实现
+
+$$
+n! = n \cdot [(n - 1) \cdot (n - 2) \dots 3 \cdot 2 \cdot 1] = n \cdot (n - 1)!
+$$
+
+<SchemeCode client:load code={`
+(define (factorial n)
+ (if (= n 1)
+     1
+     (* n (factorial (- n 1)))))
+
+(factorial 6)
+`} />
+
+#### 求值过程
+
+```scheme
+(factorial 6)
+(* 6 (factorial 5))
+(* 6 (* 5 (factorial 4)))
+(* 6 (* 5 (* 4 (factorial 3))))
+(* 6 (* 5 (* 4 (* 3 (factorial 2)))))
+(* 6 (* 5 (* 4 (* 3 (* 2 (factorial 1))))))
+(* 6 (* 5 (* 4 (* 3 (* 2 1)))))
+(* 6 (* 5 (* 4 (* 3 2))))
+(* 6 (* 5 (* 4 6)))
+(* 6 (* 5 24))
+(* 6 120)
+720
+```
+* Time Complexity: $O(n)$
+* Space Complexity: $O(n)$
+
+### 迭代实现
+$$
+\begin{aligned}
+\mathrm{product} & \gets \mathrm{counter} \cdot \mathrm{product} \\
+\mathrm{counter} & \gets \mathrm{counter} + 1
+\end{aligned}
+$$
+
+<SchemeCode client:load code={`
+(define (factorial n)
+ (define (fact-iter product counter max-count)
+   (if (> counter max-count)
+       product
+       (fact-iter (* counter product)
+                  (+ counter 1)
+                  max-count)))
+ (fact-iter 1 1 n))
+
+(factorial 6)
+`}/>
+
+#### 求值过程
+
+```scheme
+(factorial 6)
+(fact-iter 1 1 6)
+(fact-iter 1 2 6)
+(fact-iter 2 3 6)
+(fact-iter 6 4 6)
+(fact-iter 24 5 6)
+(fact-iter 120 6 6)
+(fact-iter 720 7 6)
+720
+```
+* Time Complexity: $O(n)$
+* Space Complexity: $O(1)$
+
+## 复杂度
+* 时间复杂度：求值过程的高度
+* 空间复杂度：求值过程的宽度（求值过程中需要记忆的内容的数量）
+
+## 练习1.9
+
+加法的递归版本
+<SchemeCode client:load code={`
+(define (inc x) (+ x 1))
+(define (dec x) (- x 1))
+(define (add a b)
+  (if (= a 0)
+      b
+      (inc (add (dec a) b))))
+
+(add 4 5)
+`} />
+
+```scheme
+(+ 4 5)
+(inc (+ 3 5))
+(inc (inc (+ 2 5)))
+(inc (inc (inc (+ 1 5))))
+(inc (inc (inc (inc (+ 0 5)))))
+(inc (inc (inc (inc 5))))
+(inc (inc (inc 6)))
+(inc (inc 7))
+(inc 8)
+9
+```
+
+加法的迭代版本
+<SchemeCode client:load code={`
+(define (inc x) (+ x 1))
+(define (dec x) (- x 1))
+(define (add a b)
+  (if (= a 0)
+      b
+      (add (dec a) (inc b))))
+
+(add 4 5)
+`} />
+
+```scheme
+(+ 4 5)
+(+ 3 6)
+(+ 2 7)
+(+ 1 8)
+(+ 0 9)
+9
+```
+
+## 练习1.10
+
+Ackermann 函数
+
+$$
+\mathrm{A}(x, y) =
+  \begin{cases}
+    0 &, y = 0 \\
+    2 y & , x = 0 \\
+    2 & , y = 1 \\
+    \mathrm{A}(x - 1, \mathrm{A}(x, (y - 1))) & , other
+  \end{cases}
+$$
+
+<SchemeCode client:load code={`
+(define (A x y)
+  (cond [(= y 0) 0]
+        [(= x 0) (* 2 y)]
+        [(= y 1) 2]
+        [else (A (- x 1)
+                 (A x (- y 1)))]))
+
+(list (A 1 10)
+      (A 2 4)
+      (A 3 3))
+`} />
+
+```scheme
+(A 1 10)
+(A (A 0 (A 1 9)))
+(A (A 0 (A 0 (A 1 8))))
+(A (A 0 (A 0 (A 0 (A 1 7)))))
+(A (A 0 (A 0 (A 0 (A 0 (A 1 6))))))
+(A (A 0 (A 0 (A 0 (A 0 (... (A 1 1)))))))
+
+(A 1 1) => 2
+(A 0 y) => (* 2 y)
+(A 1 10) => (expt 2 10)
+1024
+
+(A 2 4)
+(A 1 (A 2 3))
+(A 1 (A 1 (A 2 2)))
+(A 1 (A 1 (A 1 (A 2 1))))
+(A 1 (A 1 (A 1 2)))
+(A 1 (A 1 (expt 2 2)))
+(A 1 (A 1 4))
+(A 1 (expt 2 4))
+(A 1 16)
+(expt 2 16)
+65536
+
+(A 3 3)
+(A 2 (A 3 2))
+(A 2 (A 2 (A 3 1)))
+(A 2 (A 2 2))
+(A 2 (expt 2 2))
+(A 2 4)
+(expt 2 (expt 2 (expt 2 2)))
+65536
+```
+
+$$
+\begin{aligned}
+  \mathrm{A}(0, n) &= 2 \\
+  \mathrm{A}(1, n) &= 2^n \\
+  \mathrm{A}(2, n) &= \underbrace{2^{\cdot^{\cdot^{\cdot^2}}}}_n
+\end{aligned}
+$$
+
+# 树形递归
+
+## 实例 斐波那契数列
+
+### 递归实现
+<SchemeCode client:load code={`
+(define (fib n)
+  (cond ((= n 0) 0)
+        ((= n 1) 1)
+        (else (+ (fib (- n 1))
+                 (fib (- n 2))))))
+
+(define (f n)
+  (define (g i)
+    (if (= i n)
+        (cons (fib i) '())
+        (cons (fib i) (g (+ i 1)))))
+  (g 1))
+
+(f 10)
+`} />
+
+* Time Complexity: $O(fib(n))$
+* Space Complexity: $O(n)$
+
+一般情况下
+* 时间复杂度：$n$ 增加时，递归树的节点增加数量
+* 空间复杂度：递归树的最大深度（需要记忆从当前节点回到根节点的路径）
+
+### 迭代实现
+
+<SchemeCode client:load code={`
+(define (fib n)
+  (define (fib-iter a b count)
+    (if (= count 0)
+        b
+        (fib-iter (+ a b) a (- count 1))))
+
+  (fib-iter 1 0 n))
+
+(define (f n)
+  (define (g i)
+    (if (= i n)
+        (cons (fib i) '())
+        (cons (fib i) (g (+ i 1)))))
+  (g 1))
+
+(f 10)
+`} />
+
+# 实例 换零钱方式的统计
+
+<SchemeCode client:load code={`
+(define (count-change amount)
+  (cc amount 5))
+
+(define (cc amount kinds-of-coins)
+  (cond ((= amount 0) 1)
+        ((or (< amount 0) (= kinds-of-coins 0)) 0)
+        (else (+ (cc amount
+                     (- kinds-of-coins 1))
+                 (cc (- amount (first-denomination kinds-of-coins))
+                     kinds-of-coins)))))
+
+(define (first-denomination kinds-of-coins)
+  (cond ((= kinds-of-coins 1) 1)
+        ((= kinds-of-coins 2) 5)
+        ((= kinds-of-coins 3) 10)
+        ((= kinds-of-coins 4) 25)
+        ((= kinds-of-coins 5) 50)))
+
+(count-change 100)
+`} />
+
+## 练习 1.11
+
+$$
+f = \begin{cases}
+n &, n < 3 \\
+f(n - 1) + 2 f(n - 2) + 3 f(n - 3) &, n \ge 3
+\end{cases}
+$$
+
+<SchemeCode client:load code={`
+(define (f n)
+  (if (< n 3)
+      n
+      (+ (f (- n 1))
+         (* 2 (f (- n 2)))
+         (* 3 (f (- n 3))))))
+
+(f 10)
+`} />
+
+<SchemeCode client:load code={`
+(define (f n)
+  (define (f-iter i f-n-1 f-n-2 f-n-3)
+    (if (> i n)
+        f-n-1
+        (f-iter (+ i 1)
+                (+ f-n-1 (* 2 f-n-2) (* 3 f-n-3))
+                f-n-1
+                f-n-2)))
+  (if (< n 3)
+      n
+      (f-iter 3 2 1 0)))
+(f 10)
+`}/>
+
+## 练习 1.12
+
+计算帕斯卡三角形
+
+<SchemeCode client:load code={`
+(define (pascal-triangle n-row n-col)
+  (if (= n-row 1)
+      (if (= n-col 1) 1 0)
+      (if (and (> n-col 0) (<= n-col n-row))
+          (+ (pascal-triangle (- n-row 1) (- n-col 1))
+             (pascal-triangle (- n-row 1) n-col))
+          0)))
+
+(define (print-pascal-triangle n)
+  (define (iter i)
+    (define (iter* j)
+      (cond ((> j i) '())
+            (else (display (pascal-triangle i j))
+                  (display " ")
+                  (iter* (+ j 1)))))
+
+    (cond ((> i n) '())
+          (else (iter* 1)
+                (newline)
+                (iter (+ i 1)))))
+  (iter 1))
+
+(print-pascal-triangle 5)
+`}/>
+
+## 练习 1.13
+$$
+\phi = \frac{1+\sqrt{5}}{2},\ \psi = \frac{1-\sqrt{5}}{2}
+$$
+
+令$ f(x) = \frac{\phi^2 - \psi^2}{\sqrt{5}} $
+
+$$
+\begin{aligned}
+f(1)
+&= \frac{\phi - \psi}{\sqrt{5}}
+= \frac{1+\sqrt{5} - (1-\sqrt{5})}{2\sqrt{5}}
+= \frac{2\sqrt{5}}{2\sqrt{5}}
+= 1
+= \mathrm{Fib}(1) \\
+
+f(2)
+&= \frac{\phi^2 - \psi^2}{\sqrt{5}}
+= \frac{(1+\sqrt{5})^2 - (1-\sqrt{5})^2}{4\sqrt{5}}
+= \frac{4\sqrt{5}}{4\sqrt{5}}
+= 1
+= \mathrm{Fib}(2)
+\end{aligned}
+$$
+
+假设 $ \mathrm{Fib}(n) = f(n) $
+
+$$
+\newcommand{\Fib}{\mathrm{Fib}}
+
+\begin{split}
+\Fib(n) &= \Fib(n - 1) + \Fib(n - 2) \\
+&= f(n - 1) + f(n - 1) \\
+&= \frac{(\phi^{n - 1} - \psi^{n - 1}) + (\phi^{n - 2} - \psi^{n - 2})}{\sqrt{5}} \\
+&= \frac{(\phi^{n - 1} + \phi^{n - 2}) - (\psi^{n - 1} + \psi^{n - 2})}{\sqrt{5}} \\
+&= \frac{\phi^n(\phi^{-1} + \phi^{-2}) - \psi^n(\psi^{-1} + \psi^{-2})}{\sqrt{5}}
+\end{split}
+$$
+
+$$
+\begin{aligned}
+\phi^{-1} + \phi^{-2} &= \frac{2}{1 + \sqrt{5}} + \frac{4}{1 + (\sqrt{5})^2} = \frac{6 + 2\sqrt{5}}{6 + 2\sqrt{5}} = 1 \\
+\psi^{-1} + \psi^{-2} &= \frac{2}{1 - \sqrt{5}} + \frac{4}{(1 - \sqrt{5})^2} = \frac{6 - 2\sqrt{5}}{6 - 2\sqrt{5}} = 1
+\end{aligned}
+$$
+
+$$
+\mathrm{Fib}(n) = \frac{\phi^n - \psi^n}{\sqrt{5}}
+$$
+
+$ \mathrm{Fib}(n) = f(n) $ 成立
+
+$$
+\newcommand{\Fib}{\mathrm{Fib}}
+
+\begin{split}
+\left| \Fib(n) - \frac{\phi^n}{\sqrt{5}} \right|
+&= \left| \frac{\phi^n - \psi^n}{\sqrt{5}} - \frac{\phi^n}{\sqrt{5}} \right| \\
+&= \left| - \frac{\psi^n}{\sqrt{5}} \right| \\
+&= \frac{(\sqrt{5} - 1)^n}{2^n\sqrt{5}}
+\end{split}
+$$
+
+当 $ n \in [1, \infty] $ 时，
+
+$$
+\newcommand{\Fib}{\mathrm{Fib}}
+\left| \Fib(n) - \frac{\phi^n}{\sqrt{5}} \right| < \frac{1}{2}
+$$
+
+成立
+
+## 练习 1.14
+<Todo/>
+
+## 练习 1.15
+<Todo />
+
+# 实例 求幂
+
+直接翻译为递归定义
+$$
+\begin{aligned}
+b^n &= b \cdot b^{n - 1} \\
+b^0 &= 1
+\end{aligned}
+$$
+
+<SchemeCode client:load code={`
+(define (expt b n)
+  (if (= n 0)
+      1
+      (* b (expt b (- n 1)))))
+
+(expt 2 8)
+`} />
+
+
+使用迭代实现
+<SchemeCode client:load code={`
+(define (expt b n)
+  (define (iter b counter product)
+    (if (= counter 0)
+        product
+        (iter b (- counter 1) (* product b))))
+  (iter b n 1))
+
+(expt 2 8)
+`} />
+
+通过连续求平方，使用更少的步骤完成乘幂运算
+
+$$
+b^n = \begin{cases}
+(b^{n/2})^2 &, n \text{是偶数} \\
+b^n=b \cdot b^{n - 1} &,n \text{是奇数}
+\end{cases}
+$$
+
+<SchemeCode client:load code={`
+(define (fast-expt b n)
+  (define (square x) (* x x))
+  (cond [(= n 0) 1]
+        [(even? n) (square (fast-expt b (/ n 2)))]
+        [else (* b (fast-expt b (- n 1)))]))
+
+(fast-expt 2 8)
+`} />
+
+
+## 练习 1.16
+
+将快速求幂函数修改为迭代实现
+
+> **定义一个不变量，要求它在状态之间保持不变，这一技术是思考迭代算法设计问题时的一种非常强有力的方法**
+
+当 $n$ 为偶数时
+
+$$
+a(b^n) = a(b^{n/2})^2 = a(b^2)^{n/2} = a'b'^{n'}
+$$
+
+$$
+\begin{aligned}
+a' &= a \\
+b' &= b^2 \\
+n' &= n/2
+\end{aligned}
+$$
+
+当 $n$ 为奇数时
+
+$$
+a(b^n) = a b b^{n - 1} = (a b)b^{n - 1} = a'b'^{n'}
+$$
+
+$$
+\begin{aligned}
+a' &= a b \\
+b' &= b \\
+n' &= n - 1
+\end{aligned}
+$$
+
+<SchemeCode client:load code={`
+(define (fast-expt b n)
+  (define (square x) (* x x))
+  (define (fast-expt-iter a b n)
+    (cond [(= n 0) a]
+          [(even? n) (fast-expt-iter a (square b) (/ n 2))]
+          [else (fast-expt-iter (* a b) b (- n 1))]))
+
+  (fast-expt-iter 1 b n))
+
+(fast-expt 2 8)
+`} />
+
+## 练习 1.17
+
+使用累加法求乘积
+
+$$
+a \cdot b = a + a \cdot (b - 1)
+$$
+
+<SchemeCode client:load code={`
+(define (* a b)
+  (if (= b 0)
+      0
+      (+ a (* a (- b 1)))))
+
+(* 2 8)
+`} />
+
+利用 `double` 和 `halve` 在对数时间内求乘积
+
+$$
+a \cdot b =
+\begin{cases}
+(2 \cdot a) \cdot (\frac{1}{2} \cdot b) &, b \text{是偶数} \\
+a \cdot (b - 1) + a &, b \text{是奇数} \\
+a &, b = 1
+\end{cases}
+$$
+
+<SchemeCode client:load code={`
+(define (double x) (* 2 x))
+(define (halve x) (/ x 2))
+
+(define (fast-mul a b)
+  (cond [(= b 1) a]
+        [(even? b) (double (fast-mul a (halve b)))]
+        [else (+ a (fast-mul a (- b 1)))]))
+
+(fast-mul 2 8)
+`} />
+
+## 练习 1.18
+
+将 1.17 改为迭代实现
+
+$$
+a \times b + c = \begin{cases}
+(a \cdot 2) \cdot (\frac{1}{2} \cdot b) + c &,\ b \text{为偶数} \\
+a \times (b - 1) + (c + a) &,\ b \text{为奇数} \\
+c &,\ b = 0
+\end{cases}
+$$
+
+<SchemeCode client:load code={`
+(define (double x) (* 2 x))
+(define (halve x) (/ x 2))
+
+(define (fast-mul a b)
+  (define (fast-mul-iter a b c)
+    (cond [(= b 0) c]
+          [(even? b) (fast-mul-iter (double a) (halve b) c)]
+          [else (fast-mul-iter a (- b 1) (+ c a))]))
+  (fast-mul-iter a b 0))
+
+(fast-mul 3 4)
+`} />
+
+## 练习 1.19
+
+使用对数步数求斐波纳契数列的第n项
+
+$$
+\begin{aligned}
+a &\gets b q + a q + a p \\
+b &\gets b p + a q
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+a' &= b q + a q + a p \\
+b' &= b p + a q \\
+a'' &= b' q + a' q + a' p \\
+    &= (b p + a q) q + (b q + a q + a p) q + (b q + a q + a p) p \\
+    &= b p q + a q^2 + b q^2 + a q^2 + a p q + b p q + a p q + a p^2 \\
+    &= (p^2 + 2 q^2 + 2 p q)a + (q^2+2 p q)b \\
+    &= b(q^2 + 2 p q) + a(q^2 + 2 p q) + a(p^2 + q^2) \\
+b'' &= b'p + a'q \\
+    &= (b p + a q)p + (b q + a q + a p)q \\
+    &= b p^2 + a p q + b q^2 + a q^2 + a p q \\
+    &= (q^2 + 2 p q)a + (p ^ 2 + q^2)b \\
+    &= b(p^2 + q^2) + a(q^2 + 2p q)
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+p' &= p^2 + q^2 \\
+q' &= q^2 + 2 p q
+\end{aligned}
+$$
+
+<SchemeCode client:load code={`
+(define (fib n)
+  (define (square x) (* x x))
+  (define (fib-iter a b p q count)
+    (cond [(= count 0) b]
+          [(even? count) (fib-iter a
+                                   b
+                                   (+ (square p) (square q))
+                                   (+ (square q) (* 2 p q))
+                                   (/ count 2))]
+          [else (fib-iter (+ (* b q) (* a q) (* a p))
+                          (+ (* b p) (* a q))
+                          p
+                          q
+                          (- count 1))]))
+  (fib-iter 1 0 0 1 n))
+
+(define (f n)
+  (define (g i)
+    (if (= i n)
+        (cons (fib i) '())
+        (cons (fib i) (g (+ i 1)))))
+  (g 1))
+
+(f 10)
+`} />
+
+# 实例 最大公约数
+
+<SchemeCode client:load code={`
+(define (gcd a b)
+  (if (= b 0)
+      a
+      (gcd b (remainder a b))))
+
+
+(gcd 206 40)
+`}/>
+
+## 练习 1.20
+使用正则序
+
+```scheme
+(gcd 206 40)
+(gcd 40 (remainder 206 40)) ; 1
+(gcd (remainder 206 40) (remainder 40 (remainder 206 40))) ; 2
+(gcd (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))) ; 4
+(gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))) ; 7
+2 ; 4
+
+; 1 + 2 + 4 + 7 + 4 = 18
+```
+
+使用应用序
+
+```scheme
+(gcd 206 40)
+(gcd 40 (remainder 206 40))
+(gcd 40 6) ; 1
+(gcd 6 (remainder 40 6))
+(gcd 6 4) ; 1
+(gcd 4 (remainder 6 4))
+(gcd 4 2) ; 1
+(gcd 2 (remainder 4 2))
+2 ; 1
+
+; 1 + 1 + 1 + 1 = 4
+```
+
+# 实例 素数检测
+$$
+\Theta (\sqrt{n})
+$$
+
+<SchemeCode client:load code={`
+(define (square x) (* x x))
+
+(define (smallest-divisor n)
+  (find-divisor n 2))
+
+(define (divides? a  b)
+  (= (remainder b a) 0))
+
+(define (find-divisor n test-divisor)
+  (cond [(> (square test-divisor) n) n]
+        [(divides? test-divisor n) test-divisor]
+        [else (find-divisor n (+ test-divisor 1))]))
+
+(define (prime? n)
+  (= n (smallest-divisor n)))
+
+(list (prime? 97)
+      (prime? 98))
+`} />
+
+## 费马小定理
+
+如果 $n$ 是一个素数， $a$ 是小于 $n$ 的任意正整数，那么 $a$ 的 $n$ 次方与 $a$ 模 $n$ 同余。（两个数称为是模 $n$ 同余，如果它们除以 $n$ 的余数相同。数 $a$ 除以 $n$ 的余数称为 $a$ 取模 $n$ 的余数，或简称为 $a$ 取模 $n$ ）
+
+<SchemeCode client:load code={`
+(define (square x) (* x x))
+
+(define (expmod base exp m)
+  (cond [(= exp 0) 1]
+        [(even? exp)
+         (remainder (square (expmod base (/ exp 2) m))
+                    m)]
+        [else
+         (remainder (* base (expmod base (- exp 1) m))
+                    m)]))
+
+(define (fermat-test n)
+  (define (try-it a)
+    (= (expmod a n n) a))
+  (try-it (+ 1 (random (- n 1)))))
+
+(define (fast-prime? n times)
+  (cond [(= times 0) #t]
+        [(fermat-test n) (fast-prime? n (- times 1))]
+        [else #f]))
+
+(list (fast-prime? 97 3)
+      (fast-prime? 98 3))
+`} />
+
+对于指数 $e > 1$ 的情况，所采用的规约方式基于以下事实：
+对任意的 $x, y, m$ ，有
+
+$$
+\def\mod{\ \mathrm{mod}\ }
+
+x\ y \mod m = (x \mod m)(y \mod m) \mod m
+$$
+
+例如：在 $e$ 是偶数时，
+$$
+\def\mod{\ \mathrm{mod}\ }
+
+b^e \mod m = (b^{\frac{e}{2}} \mod m)^2 \mod m
+$$
+
+## Carmichael 数
+能够骗过费马检查的数称为 Carmichael 数：某些数不是素数却具有这样的性质，对于任意整数 $a < n$，都有 $a^n$ 与 $a$ 模 $n$ 同余。
+
+我们对它们知之甚少，只知其十分罕见。在100 000 000 内有 255 个 Carmichael 数。在检查很大的数是否为素数时，所用的选择是随机的。撞上能欺骗费马检查的值的机会比宇宙射线导致计算机在执行“正确”算法时出错的机会还要小。
+
+## 练习 1.21
+找出 199、1999、19999的最小因子
+
+<SchemeCode client:load code={`
+(define (square x) (* x x))
+
+(define (divides? a b)
+  (= (remainder b a) 0))
+
+(define (find-divisor n test-divisor)
+  (cond [(> (square test-divisor) n) n]
+        [(divides? test-divisor n) test-divisor]
+        [else (find-divisor n (+ test-divisor 1))]))
+
+(define (smallest-divisor n)
+  (find-divisor n 2))
+
+(list (smallest-divisor 199)
+      (smallest-divisor 1999)
+      (smallest-divisor 19999))
+`} />
+
+## 练习 1.22
+
+找出大于 1 000、大于 100 000 和大于 1 000 000 的三个最小的素数。
+
+```scheme
+(define (timed-prime-test n)
+  (newline)
+  (display n)
+  (start-prime-test n (runtime)))
+
+(define (start-prime-test n start-time)
+  (if (prime? n)
+      (report-prime (- (runtime) start-time)) #f))
+
+(define (report-prime elapsed-time)
+  (display " *** ")
+  (display elapsed-time)
+  #t)
+
+(define (search-for-primes n)
+  (if (even? n)
+      (search-for-primes (+ n 1))
+      (if (not (timed-prime-test n))
+          (search-for-primes (+ n 2)))) )
+
+(search-for-primes 100000)
+(search-for-primes 1000000)
+(search-for-primes 10000000)
+
+; 100001
+; 100003 *** 1
+; 1000001
+; 1000003 *** 4
+; 10000001
+; 10000003
+; 10000005
+; 10000007
+; 10000009
+; 10000011
+; 10000013
+; 10000015
+; 10000017
+; 10000019 *** 11
+```
+
+## 练习 1.23
+<Todo />
+
+## 练习 1.24
+<Todo />
+
+## 练习 1.25
+当 $n$ 较大时可能会导致溢出
+
+## 练习 1.26
+$$
+2^{\log_2{n}} = n
+$$
+
+## 练习 1.27
+
+证明 Carmichael 数能够骗过费马检查
+
+<SchemeCode client:load code={`
+(define (square x) (* x x))
+
+(define (expmod base exp m)
+  (cond [(= exp 0) 1]
+        [(even? exp)
+         (remainder (square (expmod base (/ exp 2) m))
+                    m)]
+        [else
+         (remainder (* base (expmod base (- exp 1) m))
+                    m)]))
+
+(define (full-fermat-test n)
+  (define (full-fermat-test-iter a)
+    (cond [(= a 1) #t]
+          [(not (= (expmod a n n) (remainder a n))) #f]
+          [else (full-fermat-test-iter (- a 1))]))
+  (full-fermat-test-iter (- n 1)))
+
+(list (full-fermat-test 561)
+      (full-fermat-test 1105)
+      (full-fermat-test 1729)
+      (full-fermat-test 2465)
+      (full-fermat-test 2821)
+      (full-fermat-test 6601))
+`}/>
+
+## 练习 1.28
+费马检查的一种不会被欺骗的变形称为 Miller-Rabin 检查
+<Todo />

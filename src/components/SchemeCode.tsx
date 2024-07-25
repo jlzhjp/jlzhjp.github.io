@@ -2,6 +2,8 @@ import { codeToHtml } from "shiki"
 import { useState, useEffect, useMemo } from "react"
 import BiwaScheme from "biwascheme"
 
+const { TopEnv } = BiwaScheme
+
 type SchemeCodeProps = {
   code: string
 }
@@ -19,10 +21,10 @@ const SchemeCode = ({ code }: SchemeCodeProps) => {
     () =>
       new BiwaScheme.Interpreter((err: any) => {
         setCodeOutput(
-          `<span style="color: var(--red)">${err.toString()}</span>`
+          `<span style="color: var(--red)">${err.toString()}</span>`,
         )
       }),
-    []
+    [],
   )
 
   useEffect(() => {
@@ -44,12 +46,17 @@ const SchemeCode = ({ code }: SchemeCodeProps) => {
   }, [code])
 
   const handleRunButtonClick = () => {
+    for (const prop in TopEnv) {
+      delete TopEnv[prop]
+    }
+
     setCodeOutput("")
 
     BiwaScheme.define_libfunc("display", 1, 1, (args: any) => {
       setCodeOutput(
         (prev) =>
-          prev + `<span style="font-style: italic">${args[0].toString()}</span>`
+          prev +
+          `<span style="font-style: italic">${args[0].toString()}</span>`,
       )
     })
 
@@ -62,7 +69,7 @@ const SchemeCode = ({ code }: SchemeCodeProps) => {
         setCodeOutput(
           (prev) =>
             (prev ? prev + "<br>" : "") +
-            `<span style="color: var(--green)">${result.toString()}</span>`
+            `<span style="color: var(--green)">${result.toString()}</span>`,
         )
       }
     })

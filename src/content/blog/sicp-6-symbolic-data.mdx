@@ -1,0 +1,580 @@
+---
+title: "SICP - 6 - 符号数据"
+description: "对应：SICP 2.3 符号数据"
+pubDate: "Jul 25 2024"
+---
+
+import SchemeCode from "../../components/SchemeCode.tsx"
+import Todo from "../../components/Todo.astro"
+
+# 符号数据基础
+## `memq` 的实现
+
+<SchemeCode client:load code={`
+(define (memq item x)
+  (cond [(null? x) #f]
+        [(eq? item (car x)) x]
+        [else (memq item (cdr x))]))
+
+(list (memq 'apple '(pear banana prune))
+      (memq 'apple '(x (apple sauce) y apple pear)))
+`} />
+
+## 练习 2.53
+
+解释器在求值下面各表达式时将打印出什么
+
+<SchemeCode client:load code={`
+(display (list 'a 'b 'c)) (newline)
+(display (list (list 'george))) (newline)
+(display (cdr '((x1 x2) (y1 y2)))) (newline)
+(display (cadr '((x1 x2) (y1 y2)))) (newline)
+(display (pair? (car '(a short list)))) (newline)
+(display (memq 'red '((red shoes) (blue socks)))) (newline)
+(display (memq 'red '(red shoes blue socks))) (newline)
+`}/>
+
+## 练习 2.54
+
+`equal?` 的定义
+
+<SchemeCode client:load code={`
+(define (equals? x y)
+  (cond [(and (pair? x) (pair? y))
+         (and (equals? (car x) (car y))
+              (equals? (cdr x) (cdr y)))]
+        [else (eq? x y)]))
+
+(list (equals? '(this is a list) '(this is a list))
+      (equals? '(this is a list) '(this (is a) list)))
+`} />
+
+## 练习 2.54
+
+`(car ''abracadabra)` 的输出为 `quote`
+
+<SchemeCode client:load code={`
+(car ''abracadabra)
+`} />
+
+```scheme
+(car ''abracadabra)
+=> (car (quote (quote abracadabra)))
+=> (car '(quote abracadabra))
+=> 'quote
+```
+
+# 实例 符号求导
+$$
+\newcommand{\deriv}[2]{\frac{\mathrm{d} #1}{\mathrm{d} #2}}
+
+\begin{aligned}
+\deriv{c}{x} &= 0 \\
+\deriv{x}{x} &= 1 \\
+\deriv{\left( u + v \right)}{x} &= \deriv{u}{x} + \deriv{v}{x} \\
+\deriv{uv}{x} &= u\left( \deriv{v}{x} \right) + v \left(\deriv{u}{x}\right) \\
+\deriv{u^n}{x} &= nu^{n-1}\left( \deriv{u}{x} \right)
+\end{aligned}
+$$
+
+<SchemeCode client:load code={`
+; 变量 => 符号
+(define (variable? x) (symbol? x))
+
+; 两个变量相同 => 符号相同
+(define (same-variable? v1 v2)
+  (and (variable? v1) (variable? v2) (eq? v1 v2)))
+
+; 和式与乘式都构造为表
+(define (=number? exp num)
+  (and (number? exp) (= exp num)))
+
+(define (make-sum a1 a2)
+  (cond [(=number? a1 0) a2]
+        [(=number? a2 0) a1]
+        [(and (number? a1) (number? a2)) (+ a1 a2)]
+        [else (list '+ a1 a2)]))
+
+(define (make-product m1 m2)
+  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+        [(=number? m1 1) m2]
+        [(=number? m2 1) m1]
+        [(and (number? m1) (number? m2)) (* m1 m2)]
+        [else (list '* m1 m2)]))
+
+; 和式 => 第一个元素为符号 + 的表
+(define (sum? x)
+  (and (pair? x) (eq? (car x) '+)))
+
+; 被加数 => 表示和式的表里的第二个元素
+(define (addend s) (cadr s))
+
+; 加数 => 表示和式的表里的第三个元素
+(define (augend s) (caddr s))
+
+; 乘式 => 第一个元素为符号 * 的表
+(define (product? x)
+  (and (pair? x) (eq? (car x) '*)))
+
+; 被乘数 => 表示乘式的表里的第二个元素
+(define (multiplier p) (cadr p))
+
+; 乘数 => 表示乘式的表里的第三个元素
+(define (multiplicand p) (caddr p))
+
+(define (deriv exp var)
+  (cond [(number? exp) 0]
+        [(variable? exp)
+         (if (same-variable? exp var) 1 0)]
+        [(sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var))]
+        [(product? exp)
+         (make-sum (make-product (multiplier exp)
+                                 (deriv (multiplicand exp) var))
+                   (make-product (deriv (multiplier exp) var)
+                                 (multiplicand exp)))]
+        [else
+         (error "unknown expression type -- DERIV" exp)]))
+
+(list (deriv '(+ x 3) 'x)
+      (deriv '(* x y) 'x)
+      (deriv '(* (* x y) (+ x 3)) 'x))
+`} />
+
+## 练习 2.56
+
+扩充指数的求导规则
+
+<SchemeCode client:load code={`
+(define (variable? x) (symbol? x))
+(define (same-variable? v1 v2) (and (variable? v1) (variable? v2) (eq? v1 v2)))
+(define (=number? exp num)
+  (and (number? exp) (= exp num)))
+(define (make-sum a1 a2)
+  (cond [(=number? a1 0) a2]
+        [(=number? a2 0) a1]
+        [(and (number? a1) (number? a2)) (+ a1 a2)]
+        [else (list '+ a1 a2)]))
+(define (make-product m1 m2)
+  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+        [(=number? m1 1) m2]
+        [(=number? m2 1) m1]
+        [(and (number? m1) (number? m2)) (* m1 m2)]
+        [else (list '* m1 m2)]))
+(define (sum? x)
+  (and (pair? x) (eq? (car x) '+)))
+(define (addend s) (cadr s))
+(define (augend s) (caddr s))
+(define (product? x)
+  (and (pair? x) (eq? (car x) '*)))
+(define (multiplier p) (cadr p))
+(define (multiplicand p) (caddr p))
+
+(define (exponentiation? x) (and (pair? x) (eq? (car x) '**)))
+
+(define (base x) (and (pair? x) (cadr x)))
+
+(define (exponent x) (and (pair? x) (caddr x)))
+
+(define (make-exponentiation base exponent)
+  (cond [(=number? base 0) 0]
+        [(=number? base 1) 1]
+        [(=number? exponent 0) 1]
+        [(=number? exponent 1) base]
+        [else (list '** base exponent)]))
+
+(define (deriv exp var)
+  (cond [(number? exp) 0]
+        [(variable? exp)
+         (if (same-variable? exp var) 1 0)]
+        [(sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var))]
+        [(product? exp)
+         (make-sum (make-product (multiplier exp)
+                                 (deriv (multiplicand exp) var))
+                   (make-product (deriv (multiplier exp) var)
+                                 (multiplicand exp)))]
+        [(exponentiation? exp)
+         (make-product (exponent exp)
+                       (make-exponentiation (base exp)
+                                            (- (exponent exp) 1)))]
+        [else
+         (error "unknown expression type -- DERIV" exp)]))
+
+(deriv '(** (- x 1) 2) 'x)
+`} />
+
+
+## 练习 2.57
+
+扩充求导程序，使之能处理任意数量项的和与乘积
+
+> Hint: 只修改和与乘积的表示，而完全不修改过程 `deriv` 的方式完成这一扩充
+
+<SchemeCode client:load code={`
+(define (variable? x) (symbol? x))
+(define (same-variable? v1 v2)
+  (and (variable? v1) (variable? v2) (eq? v1 v2)))
+(define (=number? exp num)
+  (and (number? exp) (= exp num)))
+(define (make-sum a1 a2)
+  (cond [(=number? a1 0) a2]
+        [(=number? a2 0) a1]
+        [(and (number? a1) (number? a2)) (+ a1 a2)]
+        [else (list '+ a1 a2)]))
+(define (make-product m1 m2)
+  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+        [(=number? m1 1) m2]
+        [(=number? m2 1) m1]
+        [(and (number? m1) (number? m2)) (* m1 m2)]
+        [else (list '* m1 m2)]))
+(define (sum? x)
+  (and (pair? x) (eq? (car x) '+)))
+
+; --------------------------
+(define (addend s) (cadr s))
+(define (augend s)
+  (let ([rest (cddr s)])
+    (if (= 1 (length rest))
+        (car rest)
+        (cons '+ rest))))
+; --------------------------
+
+(define (product? x)
+  (and (pair? x) (eq? (car x) '*)))
+
+; --------------------------
+(define (multiplier p) (cadr p))
+(define (multiplicand p)
+  (let ([rest (cddr p)])
+    (if (= 1 (length rest))
+        (car rest)
+        (cons '* rest))))
+; --------------------------
+
+(define (deriv exp var)
+  (cond [(number? exp) 0]
+        [(variable? exp)
+         (if (same-variable? exp var) 1 0)]
+        [(sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var))]
+        [(product? exp)
+         (make-sum (make-product (multiplier exp)
+                                 (deriv (multiplicand exp) var))
+                   (make-product (deriv (multiplier exp) var)
+                                 (multiplicand exp)))]
+        [else
+         (error "unknown expression type -- DERIV" exp)]))
+
+(list (deriv '(+ x x x) 'x)
+      (deriv '(* x x x) 'x))
+`} />
+
+## 练习 2.58
+(a)
+
+<SchemeCode client:load code={`
+(define (variable? x) (symbol? x))
+(define (same-variable? v1 v2)
+  (and (variable? v1) (variable? v2) (eq? v1 v2)))
+(define (=number? exp num)
+  (and (number? exp) (= exp num)))
+
+; --------------------------
+(define (make-sum a1 a2)
+  (cond [(=number? a1 0) a2]
+        [(=number? a2 0) a1]
+        [(and (number? a1) (number? a2)) (+ a1 a2)]
+        [else (list a1 '+ a2)]))
+
+(define (make-product m1 m2)
+  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+        [(=number? m1 1) m2]
+        [(=number? m2 1) m1]
+        [(and (number? m1) (number? m2)) (* m1 m2)]
+        [else (list m1 '* m2)]))
+(define (sum? x)
+  (and (pair? x) (eq? (cadr x) '+)))
+
+(define (addend s) (car s))
+(define (augend s) (caddr s))
+
+(define (product? x)
+  (and (pair? x) (eq? (cadr x) '*)))
+
+(define (multiplier p) (car p))
+(define (multiplicand p) (caddr p))
+; --------------------------
+
+(define (deriv exp var)
+  (cond [(number? exp) 0]
+        [(variable? exp)
+         (if (same-variable? exp var) 1 0)]
+        [(sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var))]
+        [(product? exp)
+         (make-sum (make-product (multiplier exp)
+                                 (deriv (multiplicand exp) var))
+                   (make-product (deriv (multiplier exp) var)
+                                 (multiplicand exp)))]
+        [else
+         (error "unknown expression type -- DERIV" exp)]))
+
+(list (deriv '(x + 3) 'x)
+      (deriv '(x * y) 'x)
+      (deriv '((x * y) * (x + 3)) 'x))
+`} />
+
+(b)
+<Todo />
+
+# 实例 集合的表示
+
+## 集合作为未排序的表
+
+## 练习 2.59
+为采用未排序表的集合实现定义 `union-set` 操作
+
+<SchemeCode client:load code={`
+(define (union-set set1 set2)
+  (cond [(null? set1) set2]
+        [(element-of-set? (car set1) set2)
+         (union-set (cdr set1) set2)]
+        [else (cons (car set1) (union-set (cdr set1) set2))]))
+
+(union-set '(1 2 3) '(3 4 5))
+`} />
+
+使用 `accumulate` 的实现
+<SchemeCode client:load code={`
+(define (adjoin-set x set)
+  (if (element-of-set? x set)
+      set
+      (cons x set)))
+
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (union-set set1 set2)
+  (accumulate adjoin-set set2 set1))
+
+(union-set '(1 2 3) '(3 4 5))
+`} />
+
+## 练习 2.60
+```scheme
+(define adjoin-set cons)
+(define union-set append)
+```
+
+各操作的效率
+
+|        过程        |  不允许重复   |  允许重复   |
+| :----------------: | :-----------: | :---------: |
+| `element-of-set?`  | $\Theta(n)$   | $O(1)$      |
+| `adjoin-set`       | $\Theta(n^2)$ | $O(kn)$     |
+| `unoin-set`        | $\Theta(n)$   | $O(kn)$     |
+| `intersection-set` | $\Theta(n^2)$ | $O((kn)^2)$ |
+
+## 集合作为排序的表
+
+`element-of-set?`
+
+<SchemeCode client:load code={`
+(define (element-of-set? x set)
+  (cond [(null? set) #f]
+        [(= x (car set)) #t]
+        [(< x (car set)) #f]
+        [else (element-of-set? x (cdr set))]))
+
+
+(list (element-of-set? 2 '(1 2 3))
+      (element-of-set? 4 '(1 2 3)))
+`} />
+
+`intersection-set`
+
+- 比较两个集合的起始元素 `x1` 和 `x2`
+  - `(= x1 x2)` => 得到交集的第一个元素，交集的其他元素就是这两个集合的 `cdr` 的交集。
+  - `(< x1 x2)` => 由于 `x2` 是集合 `set2` 的最小元素，立即可以断定 `x1` 不会出现在集合的任何地方，它不应该在交集中，两集合的交集为 `(set2)` 与 `(cdr set1)` 的交集
+  - `(< x2 x1)` => 集合 `set1` 与 `(cdr set2)` 的交集
+
+<SchemeCode client:load code={`
+(define (intersection-set set1 set2)
+  (if (or (null? set1) (null? set2))
+      '()
+      (let ([x1 (car set1)] [x2 (car set2)])
+        (cond [(= x1 x2)
+               (cons x1
+                     (intersection-set (cdr set1)
+                                       (cdr set2)))]
+              [(< x1 x2)
+               (intersection-set (cdr set1) set2)]
+              [(< x2 x1)
+               (intersection-set set1 (cdr set2))]))))
+
+(intersection-set '(1 2 3 4 5) '(3 4 5 6 7 8))
+`} />
+
+## 练习 2.61
+
+给出排序表示时 `adjoin-set` 的实现。
+
+<SchemeCode client:load code={`
+(define (adjoin-set x set)
+  (cond [(null? set) (cons x '())]
+        [(< x (car set)) (cons x set)]
+        [(= x (car set)) set]
+        [(> x (car set)) (cons (car set) (adjoin-set x (cdr set)))]))
+
+(adjoin-set 3 '(0 1 2 4 5 6))
+`} />
+
+## 练习 2.62
+
+给出在集合的排序表示上 `union-set` 的一个 $\Theta(n)$ 实现
+
+<SchemeCode client:load code={`
+(define (union-set set1 set2)
+  (cond [(null? set1) set2]
+        [(null? set2) set1]
+        [else
+         (let ([x1 (car set1)] [x2 (car set2)])
+           (cond [(= x1 x2) (cons x1 (union-set (cdr set1) (cdr set2)))]
+                 [(< x1 x2) (cons x1 (union-set (cdr set1) set2))]
+                 [(> x1 x2) (cons x2 (union-set set1 (cdr set2)))]))]))
+
+(union-set '(1 2 3 4 5 6) '(1 3 5 7 9))
+`} />
+
+## 集合作为二叉树
+
+<SchemeCode client:load code={`
+(define (entry tree) (car tree))
+
+(define (left-branch tree) (cadr tree))
+
+(define (right-branch tree) (caddr tree))
+
+(define (make-tree entry left right)
+  (list entry left right))
+
+(define (element-of-set? x set)
+  (cond [(null? set) #f]
+        [(= x (entry set)) #t]
+        [(< x (entry set))
+         (element-of-set? x (left-branch set))]
+        [(> x (entry set))
+         (element-of-set? x (right-branch set))]))
+
+(define (adjoin-set x set)
+  (cond [(null? set) (make-tree x '() '())]
+        [(= x (entry set)) set]
+        [(< x (entry set))
+         (make-tree (entry set)
+                    (adjoin-set x (left-branch set))
+                    (right-branch set))]
+        [(> x (entry set))
+         (make-tree (entry set)
+                    (left-branch set)
+                    (adjoin-set x (right-branch set)))]))
+
+(define set '())
+
+(adjoin-set 2 (adjoin-set 3 (adjoin-set 1 set)))
+`} />
+
+## 练习 2.63
+(a)
+<SchemeCode client:load code={`
+(define (entry tree) (car tree))
+
+(define (left-branch tree) (cadr tree))
+
+(define (right-branch tree) (caddr tree))
+
+(define (make-tree entry left right)
+  (list entry left right))
+
+(define (append list1 list2)
+  (if (null? list1)
+      list2
+      (cons (car list1) (append (cdr list1) list2))))
+
+(define (tree->list-1 tree)
+  (if (null? tree)
+      '()
+      (append (tree->list-1 (left-branch tree))
+              (cons (entry tree)
+                    (tree->list-1 (right-branch tree))))))
+
+(define (tree->list-2 tree)
+  (define (copy-to-list tree result-list)
+    (if (null? tree)
+        result-list
+        (copy-to-list (left-branch tree)
+                      (cons (entry tree)
+                            (copy-to-list (right-branch tree)
+                                          result-list)))))
+  (copy-to-list tree '()))
+
+(define tree1 (make-tree 7
+                         (make-tree 3
+                                    (make-tree 1
+                                               '()
+                                               '())
+                                    (make-tree 5
+                                               '()
+                                               '()))
+                         (make-tree 9
+                                    '()
+                                    (make-tree 11
+                                               '()
+                                               '()))))
+
+(define tree2 (make-tree 3
+                         (make-tree 1
+                                    '()
+                                    '())
+                         (make-tree 7
+                                    (make-tree 5
+                                               '()
+                                               '())
+                                    (make-tree 9
+                                               '()
+                                               (make-tree 11
+                                                          '()
+                                                          '())))))
+
+(define tree3 (make-tree 5
+                         (make-tree 3
+                                    (make-tree 1
+                                               '()
+                                               '())
+                                    '())
+                         (make-tree 9
+                                    (make-tree 7
+                                               '()
+                                               '())
+                                    (make-tree 11
+                                               '()
+                                               '()))))
+(list (list (tree->list-1 tree1)
+            (tree->list-1 tree2)
+            (tree->list-1 tree3))
+      (list (tree->list-2 tree1)
+            (tree->list-2 tree2)
+            (tree->list-2 tree3)))
+`} />
+
+(b)
+<Todo />
+
+## 练习 2.64

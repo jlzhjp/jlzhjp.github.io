@@ -1,0 +1,827 @@
+---
+title: "SICP - 3 - 高阶函数"
+description: "对应：SICP 1.3 使用高阶函数做抽象"
+pubDate: "Jul 24 2024"
+---
+
+import SchemeCode from "../../components/SchemeCode.tsx"
+import Todo from "../../components/Todo.astro"
+
+# 实例 求和过程的抽象
+
+序列
+$$
+\frac{1}{1 \cdot 3} + \frac{1}{5 \cdot 7} +\frac{1}{9 \cdot 11} + \dots
+$$
+
+缓慢地收敛到 $\pi/8$
+
+<SchemeCode client:load code={`
+(define (cube x) (* x x x))
+
+(define (sum term a next b)
+  (if (> a b)
+      0
+      (+ (term a)
+         (sum term (next a) next b))))
+
+(define (inc n) (+ n 1))
+
+(define (sum-cubes a b)
+  (sum cube a inc b))
+
+(define (identity x) x)
+
+(define (sum-integers a b)
+  (sum identity a inc b))
+
+(define (pi-sum a b)
+  (define (pi-term x)
+    (/ 1.0 (* x (+ x 2))))
+
+  (define (pi-next x)
+    (+ x 4))
+  (sum pi-term a pi-next b))
+
+(list (sum-integers 1 10)
+      (* 8 (pi-sum 1 1000)))
+`} />
+
+## 求积分
+求出函数 $f$ 在范围 $a$ 和 $b$ 之间定积分的近似值，可以用下面的公式完成
+
+$$
+\newcommand{\f}[1]{f\left( #1 \right)}
+\newcommand{\d}{\mathrm{d}}
+\int_a^b\ f = \left[ \f{a + \frac{\d x}{2}} + \f{a + \d x + \frac{\d x}{2}} + \f{a + 2\d x + \frac{\d x}{2}} + \dots \right]\d x
+$$
+
+<SchemeCode client:load code={`
+(define (sum term a next b)
+  (if (> a b)
+      0
+      (+ (term a)
+         (sum term (next a) next b))))
+
+(define (cube x) (* x x x))
+
+(define (integral f a b dx)
+  (define (add-dx x) (+ x dx))
+  (* (sum f (+ a (/ dx 2.0)) add-dx b)
+     dx))
+
+(list (integral cube 0 1 0.01)
+      (integral cube 0 1 0.001))
+`} />
+
+## 练习 1.29
+
+辛普森规则是一种比上面所用规则更精确的数值积分方法。采用辛普森规则，函数 $f$ 在范围 $a$ 和 $b$ 之间的定积分的近似值是：
+
+$$
+\frac{h}{3}\left[y_0 + 4 y_1 + 2 y_2 + 4 y_3 + 2 y_4 + \dots + 2 y_{n - 2} + 4 y_{n - 1} + y_n \right]
+$$
+其中，$h = (b - a) / n$， $n$ 是某个偶数，而 $y_k = f(a + kh)$（增大 $n$ 能提高近似值的精度）
+
+<SchemeCode client:load code={`
+(define (sum term a next b)
+  (if (> a b)
+      0
+      (+ (term a)
+         (sum term (next a) next b))))
+
+(define (cube x) (* x x x))
+
+(define (inc x) (+ x 1))
+
+(define (simpson-integral f a b n)
+  (define (h) (/ (- b a) n))
+  (define (y k)
+    (f (+ a (* k (h)))))
+  (define (t k)
+    (cond [(or (= k 0) (= k n)) (y k)]
+          [(even? k) (* 2 (y k))]
+          [else (* 4 (y k))]))
+  (* (/ (h) 3.0)
+     (sum t 0 inc n)))
+
+(list (simpson-integral cube 0 1 100)
+      (simpson-integral cube 0 1 1000))
+`} />
+
+## 练习 1.30
+
+基于迭代的求和函数
+
+<SchemeCode client:load code={`
+(define (sum term a next b)
+  (define (iter a result)
+    (if (> a b)
+        result
+        (iter (next a) (+ (term a) result))))
+  (iter a 0))
+
+(define (pi-sum a b)
+  (define (pi-term x)
+    (/ 1.0 (* x (+ x 2))))
+
+  (define (pi-next x)
+    (+ x 4))
+  (sum pi-term a pi-next b))
+
+(* 8 (pi-sum 1 1000))
+`}/>
+
+## 练习 1.31
+
+定义 `product` 过程，说明如何用 `product` 定义 `factorial`。另外按照下的公式计算 $\pi$ 的近似值。
+
+$$
+\frac{\pi}{4} = \frac{2 \cdot 4 \cdot 4 \cdot 6 \cdot 6 \cdot 8 \dots}{3 \cdot 3 \cdot 5 \cdot 5 \cdot 7 \cdot 7 \dots}
+$$
+
+
+上述公式可写成以下形式
+
+$$
+\frac{\pi}{2} = \prod_{n=1}^{\infty}\left(\frac{2n}{2n - 1} \cdot \frac{2n}{2n + 1}\right)
+$$
+
+<SchemeCode client:load code={`
+(define (inc x) (+ x 1))
+
+(define (product factor a next b)
+  (if (> a b)
+      1
+      (* (factor a) (product factor (next a) next b))))
+
+(define (factorial x)
+  (product identity 1 inc x))
+
+(define (wallis-product n)
+  (define (inc x) (+ 1 x))
+  (define (fact n) (* (/ (* 2 n)
+                         (- (* 2 n) 1))
+                      (/ (* 2 n)
+                         (+ (* 2 n) 1))))
+  (product fact 1.0 inc n))
+
+(list (factorial 10)
+      (* (wallis-product 10000) 2))
+`} />
+
+写一个生成迭代过程的 `product` 函数
+
+<SchemeCode client:load code={`
+(define (inc x) (+ x 1))
+
+(define (product factor a next b)
+  (define (iter a result)
+    (if (> a b)
+        result
+        (iter (next a) (* (factor a) result))))
+  (iter a 1))
+
+(define (factorial x)
+  (product identity 1 inc x))
+
+(define (wallis-product n)
+  (define (inc x) (+ 1 x))
+  (define (fact n) (* (/ (* 2 n)
+                         (- (* 2 n) 1))
+                      (/ (* 2 n)
+                         (+ (* 2 n) 1))))
+  (product fact 1.0 inc n))
+
+(list (factorial 10)
+      (* (wallis-product 10000) 2))
+`} />
+
+## 练习 1.32
+
+使用 `accumulate` 实现 `sum` 和 `product`
+
+基于递归计算的实现
+<SchemeCode client:load code={`
+(define (inc x) (+ x 1))
+
+(define (accmulate combiner null-value term a next b)
+  (if (> a b)
+      null-value
+      (combiner (term a)
+                (accmulate combiner
+                           null-value
+                           term
+                           (next a)
+                           next
+                           b))))
+
+(define (sum term a next b)
+  (accmulate + 0 term a next b))
+
+(define (prod factor a next b)
+  (accmulate * 1 factor a next b))
+
+(list (sum identity 1 inc 100)
+      (prod identity 1 inc 10))
+`} />
+
+基于迭代计算的实现
+
+<SchemeCode client:load code={`
+(define (inc x) (+ x 1))
+
+(define (accmulate combiner null-value term a next b)
+  (define (iter n result)
+    (if (> n b)
+        result
+        (iter (next n) (combiner (term n) result))))
+  (iter a null-value))
+
+(define (sum term a next b)
+  (accmulate + 0 term a next b))
+
+(define (prod factor a next b)
+  (accmulate * 1 factor a next b))
+
+(list (sum identity 1 inc 100)
+      (prod identity 1 inc 10))
+`} />
+
+## 练习 1.33
+实现 `filtered-accumulate`，说明如何用 `filtered-accumulate` 表达以下内容
+
+1. 求出在区间 $a$ 到 $b$ 中所有素数之和（假定你已经写出了谓词 $prime?$ ）
+2. 小于 $n$ 的所有与 $n$ 互素的正整数（即所有满足 $\mathrm{GCD}(i, n) = 1, i < n $ 的整数）之乘积
+
+<SchemeCode client:load code={`
+(define (filtered-accumulate filter
+                             combiner
+                             null-value
+                             term
+                             a
+                             next
+                             b)
+  (define (iter n result)
+    (cond [(> n b) result]
+          [(not (filter (term n))) (iter (next n) result)]
+          [else (iter (next n) (combiner n result))]))
+  (iter a null-value))
+
+(define (inc x) (+ x 1))
+
+(define (square x) (* x x))
+
+(define (smallest-divisor n)
+  (find-divisor n 2))
+
+(define (divides? a b)
+  (= (remainder b a) 0))
+
+(define (find-divisor n test-divisor)
+  (cond [(> (square test-divisor) n) n]
+        [(divides? test-divisor n) test-divisor]
+        [else (find-divisor n (+ test-divisor 1))]))
+
+(define (prime? n)
+  (if (= n 1) #f
+      (= n (smallest-divisor n))))
+
+(define (prime-sum a b)
+  (filtered-accumulate prime? + 0 identity a inc b))
+
+(define (gcd a b)
+  (if (= b 0)
+      a
+      (gcd b (remainder a b))))
+
+(define (relative-prime? i n)
+  (= (gcd i n) 1))
+
+(define (product-of-relative-prime n)
+  (define (relative-prime? i)
+    (= (gcd i n) 1))
+  (filtered-accumulate relative-prime? * 1 identity 1 inc n))
+
+(list (prime-sum 10 15)
+      (product-of-relative-prime 10))
+`} />
+
+# 使用 lambda 构建过程
+
+## 练习 1.34
+假设我们定义了
+```scheme
+(define (f g) (g 2))
+```
+那么就有
+<SchemeCode client:load code={`
+(define (f g) (g 2))
+(define (square x) (* x x))
+
+(list (f square)
+      (f (lambda (z) (* z (+ z 1)))))
+`} />
+
+那么如果我们要求解释器去求值 `(f f)`，那会发生什么情况？请给出解释。
+
+```
+(f f)
+(f 2)
+(2 2)
+
+application: not a procedure;
+ expected a procedure that can be applied to arguments
+  given: 2
+```
+
+# 实例 通过区间折半寻找方程的根
+
+对于一个连续函数 $f$ ， $f(x) = 0$ 的根可以使用以下步骤寻找
+* 如果对于给定点 $a$ 和 $b$ 有 $f(a) < 0 < f(b)$，那么 $f$ 在 $a$ 和 $b$ 之间必有一个零点。
+* 为了确定这个零点，令 $x$ 是 $a$ 和 $b$ 的平均值并计算出 $f(x)$。
+  * 如果 $f(x) > 0$ ，那么在 $a$ 和 $x$ 之间必然有一个 $f$ 的零点
+  * 如果 $f(x) < 0$ ，那么在 $x$ 和 $b$ 之间必然有一个 $f$ 的零点
+
+<SchemeCode client:load code={`
+(define (average x y) (/ (+ x y) 2))
+
+(define (search f neg-point pos-point)
+  (define (close-enough? x y)
+    (< (abs (- x y)) 0.001))
+
+  (let ([midpoint (average neg-point pos-point)])
+    (if (close-enough? neg-point pos-point)
+        midpoint
+        (let ([test-value (f midpoint)])
+          (cond [(positive? test-value)
+                  (search f neg-point midpoint)]
+                [(negative? test-value)
+                 (search f midpoint pos-point)])))))
+
+(define (half-interval-method f a b)
+  (let ((a-value (f a))
+        (b-value (f b)))
+    (cond [(and (negative? a-value) (positive? b-value))
+            (search f a b)]
+           [(and (negative? b-value) (positive? a-value))
+            (search f b a)]
+           [else
+            (error "Values are not of opposite sign" a b)])))
+
+(list (half-interval-method sin 2.0 4.0)
+      (half-interval-method (lambda (x) (- (* x x x) (* 2 x) 3))
+                            1.0
+                            2.0))
+`} />
+
+# 实例 找出函数的不动点
+数 $x$ 称为函数 $f$ 的不动点，如果 $x$ 满足方程 $f(x) = x$。对于某些函数，通过从某个初始猜测出发，反复应用 $f$
+
+$$
+f(x), f(f(x)), f(f(f(x))), \dots
+$$
+
+直到值的变化不大时，就可以找到它的一个不动点。
+
+计算某个数 $x$ 的平方根，就是要找到一个 $y$ 使得 $y^2 = x$。
+
+将这一等式变成另一个等价形式 $y = x/y$，就可以发现，这里就是要寻找函数
+$$
+y \mapsto \frac{x}{y}
+$$
+的不动点。
+
+遗憾的是，这一不动点搜寻并不收敛。考虑某个初始猜测 $y_1$ ，下一个猜测将是 $y_2 = x / y_1$ ，而再下一个猜测是 $y_3 = x/y_2 = x/(x/y_1) = y_1$。结果是进入了一个无限循环。
+
+控制这类震荡的一种方法是不让有关的猜测变化太剧烈。因为实际答案总是在两个猜测 $y$ 和 $x/y$ 之间，我们可以做出一个猜测，使之不像 $x / y$ 那样远离 $y$ 。
+
+为此可以用 $y$ 和 $x/y$ 的平均值。这样，我们就取 $y$ 之后的下一个猜测值为 $(1/2)(y+x/y)$ 而不是 $x/y$ 。
+
+做出这种猜测序列的计算过程也就是搜寻 $y \mapsto (1/2)(y + x/y)$ 的不动点。
+
+<SchemeCode client:load code={`
+(define tolerance 0.00001)
+
+(define (average x y) (/ (+ x y) 2))
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ([next (f guess)])
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+(define (sqrt x)
+  (fixed-point (lambda (y) (average y (/ x y))) 1.0))
+
+(list (fixed-point cos 1.0)
+      (fixed-point (lambda (y) (+ (sin y) (cos y))) 1.0)
+      (sqrt 4))
+`} />
+
+## 练习 1.35
+证明黄金分割率 $\phi$ 是变换 $x \mapsto 1 + 1/x$ 的不动点。请利用这一事实，通过过程 `fixed-point` 计算出 $\phi$ 的值
+黄金分割率：
+
+$$
+\begin{aligned}
+\phi^2 &= \phi + 1 \\
+\phi &= 1 + 1 / \phi
+\end{aligned}
+$$
+
+<SchemeCode client:load code={`
+(define tolerance 0.00001)
+
+(define (average x y) (/ (+ x y) 2))
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ([next (f guess)])
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+(fixed-point (lambda (x) (+ 1 (/ 1 x))) 1.0)
+`} />
+
+## 练习 1.36
+修改 `fixed-point` ， 使它能打印出计算中产生的近似值序列。
+
+而后通过找出 $ x \mapsto log(1000) / log(x)$ 的不动点的方式，确定 $x^x = 1000$ 的一个根
+
+比较采用平均阻尼和不采用平均组尼时的计算步数
+
+<SchemeCode client:load code={`
+(define tolerance 0.00001)
+
+(define (average x y) (/ (+ x y) 2))
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (display guess)
+    (display "; ")
+    (let ([next (f guess)])
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+; 不使用平均阻尼
+(fixed-point (lambda (y) (/ (log 1000) (log y))) 1.5)
+
+; 使用平均阻尼
+(newline)
+(fixed-point (lambda (y) (average y (/ (log 1000) (log y)))) 1.5)
+`} />
+
+## 练习 1.37
+一个无穷连分式是一个形如以下形式的表达式
+$$
+f = \frac{N_1}{D_1 + \frac{N_2}{D_2 + \frac{N_3}{D_3 + \dots}}}
+$$
+
+在所有的 $N_i$ 和 $D_i$ 都等于 1 时，这一无穷连分式产生出 $1 / \phi$，其中的 $\phi$ 就是黄金分割率。
+
+递归形式
+<SchemeCode client:load code={`
+(define (cont-frac n d k)
+  (define (inner i)
+    (if (= i k)
+        (/ (n i) (d i))
+        (/ (n i) (+ (d i) (inner (+ i 1))))))
+  (inner 1))
+
+(cont-frac (lambda (i) 1.0) (lambda (i) 1.0) 100)
+`} />
+
+迭代形式
+<SchemeCode client:load code={`
+(define (cont-frac n d k)
+  (define (iter prev i)
+    (if (= i 0)
+        prev
+        (iter (/ (n i) (+ (d i) prev)) (- i 1))))
+  (iter 0 k))
+
+(cont-frac (lambda (i) 1.0) (lambda (i) 1.0) 100)
+`} />
+
+## 练习 1.38
+欧拉提出了一个 $e - 2$ 的连分展开式
+
+在这一分式中， $N_i$ 全部都是 1，而 $D_i$ 依次为 $1, 2, 1, 1, 4, 6, 1, 1, 8, \dots$
+
+<SchemeCode client:load code={`
+(define (cont-frac n d k)
+  (define (iter prev i)
+    (if (= i 0)
+        prev
+        (iter (/ (n i) (+ (d i) prev)) (- i 1))))
+  (iter 0 k))
+
+(define (euler n)
+  (cont-frac
+   (lambda (i) 1.0)
+   (lambda (i)
+     (if (= (remainder (+ i 1) 3) 0)
+         (* (/ (+ i 1) 3) 2)
+         1))
+   n))
+
+(+ (euler 100) 2)
+`} />
+
+## 练习 1.39
+正切函数的连分式为
+
+$$
+\tan x = \frac{x}{1 - \frac{x^2}{3 - \frac{x^2}{5 - \ddots}}}
+$$
+
+其中 $x$ 用弧度表示
+
+<SchemeCode client:load code={`
+(define (cont-frac n d k)
+  (define (iter prev i)
+    (if (= i 0)
+        prev
+        (iter (/ (n i) (+ (d i) prev)) (- i 1))))
+  (iter 0 k))
+
+(define (tan-cf x k)
+  (cont-frac
+   (lambda (i)
+     (if (= i 1) x (- (* x x))))
+   (lambda (i)
+     (- (* i 2) 1))
+   k))
+
+(tan-cf 3.1415926535 10000)
+`} />
+
+# 过程作为返回值
+
+## 实例 平均阻尼的过程抽象
+
+求 $y = x/y$ 不动点可以转换为求
+
+$$
+y \mapsto (1/2) (y + x/y)
+$$
+
+的不动点
+
+<SchemeCode client:load code={`
+(define tolerance 0.00001)
+
+(define (average x y) (/ (+ x y) 2))
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ([next (f guess)])
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+(define (average-damp f)
+  (lambda (x) (average x (f x))))
+
+(define (sqrt x)
+  (fixed-point (average-damp (lambda (y) (/ x y)))
+               1.0))
+
+(sqrt 16)
+`} />
+
+## 实例 牛顿法的一般情况
+
+如果 $x \mapsto g(x)$ 是一个可微函数，那么方程 $g(x) = 0$的一个解就是函数 $x \mapsto f(x)$ 的一个不动点，其中：
+
+$$
+f(x) = x - \frac{g(x)}{Dg(x)}
+$$
+
+这里的 $Dg(x)$ 是 $g$ 对 $x$ 的导数。
+
+$$
+Dg(x) = \frac{g(x + \mathrm{d}x) - g(x)}{\mathrm{d}x}
+$$
+
+<SchemeCode client:load code={`
+(define (square x) (* x x))
+
+(define tolerance 0.00001)
+
+(define (average x y) (/ (+ x y) 2))
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ([next (f guess)])
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+(define dx 0.00001)
+
+(define (deriv g)
+  (lambda (x)
+    (/ (- (g ( + x dx)) (g x))
+       dx)))
+
+(define (newton-transform g)
+  (lambda (x)
+    (- x (/ (g x) ((deriv g) x)))))
+
+(define (newtons-method g guess)
+  (fixed-point (newton-transform g) guess))
+
+(define (sqrt x)
+  (newtons-method (lambda (y) (- (square y) x))
+                  1.0))
+
+(sqrt 16)
+`} />
+
+## 抽象和第一级过程
+<SchemeCode client:load code={`
+; fixed-point
+(define tolerance 0.00001)
+
+(define (average x y) (/ (+ x y) 2))
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ([next (f guess)])
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+; derivative
+(define dx 0.00001)
+
+(define (deriv g)
+  (lambda (x)
+    (/ (- (g ( + x dx)) (g x))
+       dx)))
+
+; newton method
+(define (newton-transform g)
+  (lambda (x)
+    (- x (/ (g x) ((deriv g) x)))))
+
+(define (newtons-method g guess)
+  (fixed-point (newton-transform g) guess))
+
+; average damp
+(define (average-damp f)
+  (lambda (x) (average x (f x))))
+
+(define (square x) (* x x))
+
+(define (fixed-point-of-transform g transform guess)
+  (fixed-point (transform g) guess))
+
+(define (sqrt1 x)
+  (fixed-point-of-transform (lambda (y) (/ x y))
+                            average-damp
+                            1.0))
+
+(define (sqrt2 x)
+  (fixed-point-of-transform (lambda (y) (- (square y) x))
+                            newton-transform
+                            1.0))
+
+(list (sqrt1 16)
+      (sqrt2 16))
+`} />
+
+## 练习 1.40
+定义 `cubic`，使用牛顿法逼近三次方程 $x^3 + ax^2 + bx + c$ 的零点
+
+<SchemeCode client:load code={`
+; fixed-point
+(define tolerance 0.00001)
+
+(define (average x y) (/ (+ x y) 2))
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ([next (f guess)])
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+; derivative
+(define dx 0.00001)
+
+(define (deriv g)
+  (lambda (x)
+    (/ (- (g ( + x dx)) (g x))
+       dx)))
+
+; newton method
+(define (newton-transform g)
+  (lambda (x)
+    (- x (/ (g x) ((deriv g) x)))))
+
+(define (newtons-method g guess)
+  (fixed-point (newton-transform g) guess))
+
+(define (cubic a b c)
+  (lambda (x)
+    (+ (* x x x) (* a x x) (* b x) c)))
+
+(newtons-method (cubic 1 1 1) 1)
+`} />
+
+## 练习 1.41
+
+`double`
+
+<SchemeCode client:load code={`
+(define (inc x) (+ x 1))
+
+(define (double f)
+  (lambda (x)
+    (f (f x))))
+
+(((double (double double)) inc) 5)
+`} />
+
+## 练习 1.42
+
+`compose`
+
+<SchemeCode client:load code={`
+(define (suqare x) (* x x))
+(define (inc x) (+ x 1))
+
+(define (compose f g)
+  (lambda (x) (f (g x))))
+
+((compose square inc) 6)
+`} />
+
+## 练习 1.43
+
+`repeated`
+
+<SchemeCode client:load code={`
+(define (square x) (* x x))
+(define (repeated f count)
+  (define (iter counter inner-result)
+    (if (= counter 0)
+        inner-result
+        (iter (- counter 1) (f inner-result))))
+  (lambda (x) (iter count x)))
+
+((repeated square 2) 5)
+`} />
+
+## 练习 1.44
+
+`smooth`
+
+```scheme
+(define (smooth f)
+  (define (dx) 0.0001)
+  (lambda (x)
+    (/ (+ (f (- x dx)) (f x) (f (+ x dx))) 3)))
+```
+
+## 练习 1.45
+
+<Todo />
+
+## 练习 1.46
+
+<Todo />
+
+## First-class citizens
+The rights and privileges of first-class citizens
+- To be named by variables
+- To be passed as arguments to procedures
+- To be returned as values of procedures
+- To be incorporated into data structures

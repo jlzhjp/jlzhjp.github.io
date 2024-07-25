@@ -1,345 +1,85 @@
 ---
-title: "SICP 第二章 构造数据抽象 (WIP)"
-description: "SICP 第二章的习题及读书笔记"
-pubDate: "Jul 11 2024"
+title: "SICP - 5 - 层次性数据"
+description: "对应：SICP 2.2 层次性数据和闭包性质"
+pubDate: "Jul 24 2024"
 ---
 
-import SchemeCode from "../../components/SchemeCode.jsx"
+import SchemeCode from "../../components/SchemeCode.tsx"
+import Todo from "../../components/Todo.astro"
 
-# 2.1 数据抽象导引
+# 表操作
 
-## 实例 有理数的算术运算
-
-```scheme
-(define (gcd x y)
-  (if (= y 0)
-      x
-      (gcd y (remainder x y))))
-
-(define (make-rat n d)
-  (let [(divisor (gcd n d))]
-    (let [(n* (/ n divisor))
-          (d* (/ d divisor))]
-      (cond [(> d* 0) (cons n* d*)]
-            [(< d* 0) (cons (- n*) (- d*))]))))
-
-(define (numer x) (car x))
-(define (denom x) (cdr x))
-
-(define (add-rat x y)
-  (make-rat (+ (* (numer x) (denom y))
-               (* (numer y) (denom x)))
-            (* (denom x) (denom y))))
-
-(define (sub-rat x y)
-  (make-rat (- (* (numer x) (denom y))
-               (* (numer y) (denom x)))
-            (* (denom x) (denom y))))
-
-(define (mul-rat x y)
-  (make-rat (* (numer x) (numer y))
-            (* (denom x) (denom y))))
-
-(define (div-rat x y)
-  (make-rat (* (numer x) (denom y))
-            (* (denom x) (numer y))))
-
-(define (print-rat x)
-  (newline)
-  (display (numer x))
-  (display "/")
-  (display (denom x)))
-
-(define (equal-rat? x y)
-  (= (* (numer x) (denom y))
-     (* (numer y) (denom x))))
-
-(define one-half (make-rat 1 2))
-(print-rat one-half)
-(define one-third (make-rat 1 3))
-(print-rat one-third)
-
-(print-rat (add-rat one-half one-third))
-(print-rat (mul-rat one-half one-third))
-(print-rat (add-rat one-third one-third))
-(print-rat (make-rat 6 -9))
-```
-
-## 练习 2.1 改进 `make-rat` 的实现
-
-```scheme
-(define (make-rat n d)
-  (let [(divisor (gcd n d))]
-    (let [(n* (/ n divisor))
-          (d* (/ d divisor))]
-      (cond [(> d* 0) (cons n* d*)]
-            [(< d* 0) (cons (- n*) (- d*))]))))
-```
-
-## 练习 2.2 线段中点
-```scheme
-(define (make-segment start end) (cons start end))
-
-(define (start-segment seg) (car seg))
-
-(define (end-segment seg) (cdr seg))
-
-(define (make-point x-point y-point) (cons x-point y-point))
-
-(define (x-point point) (car point))
-
-(define (y-point point) (cdr point))
-
-(define (midpoint-segment seg)
-  (make-point
-   (/ (+ (x-point (start-segment seg))
-         (x-point (end-segment seg)))
-      2)
-   (/ (+ (y-point (start-segment seg))
-         (y-point (end-segment seg)))
-      2)))
-
-(define (print-point p)
-  (newline)
-  (display "(")
-  (display (x-point p))
-  (display ",")
-  (display (y-point p))
-  (display ")"))
-
-(define line (make-segment (make-point 1 2) (make-point 3 4)))
-(define mid (midpoint-segment line))
-(print-point mid)
-```
-
-## 练习 2.3 平面矩形的表示
-```scheme
-(define (make-rect point-lt point-rb) (cons point-lt point-rb))
-(define (rect-point-lt rect) (car rect))
-(define (rect-point-rb rect) (cdr rect))
-
-(define (rect-width rect) (-(x-point (rect-point-rb rect))
-                            (x-point (rect-point-lt rect))))
-
-(define (rect-height rect) (- (y-point (rect-point-lt rect))
-                              (y-point (rect-point-rb rect))))
-
-(define (rect-area rect) (* (rect-width rect) (rect-height rect)))
-(define (rect-perimeter rect) (* 2 (+ (rect-width rect) (rect-height rect))))
-
-(define rect (make-rect (make-point 1 4) (make-point 3 1)))
-
-(display "Width: ") (display (rect-width rect)) (newline)
-(display "Height: ") (display (rect-height rect)) (newline)
-(display "Area: ") (display (rect-area rect)) (newline)
-(display "Perimeter: ") (display (rect-perimeter rect)) (newline)
-```
-
-## 实例 序对的一种过程性表示
-```scheme
-(define (cons x y)
-  (define (dispatch m)
-    (cond [(= m 0) x]
-          [(= m 1) y]
-          [else (error "Argument not 0 or 1 -- CONS" m)]))
-  dispatch)
-
-(define (car z) (z 0))
-(define (cdr z) (z 1))
-
-(define pair (cons 1 2))
-(display (car pair))
-(display (cdr pair))
-```
-
-## 练习 2.4 序对的另一种过程性表示
-```scheme
-(define (cons x y)
-  (lambda (m) (m x y)))
-
-(define (car z)
-  (z (lambda (p q) p)))
-
-(define (cdr z)
-  (z (lambda (p q) q)))
-
-(car z)
-(car (lambda (m) (m x y)))
-(((lambda (m) (m x y)) (lambda (p q) p)))
-((lambda (p q) p) x y)
-p
-```
-
-## 练习 2.5 将 $a$ 和 $b$ 的序对表示为乘积 $2^a \cdot 3^b$ 对应的整数
-
-```scheme
-(define (cons-int a b) (* (expt 2 a) (expt 3 b)))
-
-(define (car-int z)
-  (if (= 0 (remainder z 3))
-      (car-int (/ z 3))
-      (log z 2)))
-
-(define (cdr-int z)
-  (log (/ z (expt 2 (car-int z))) 3))
-
-(define pair (cons-int 6 3))
-(display (car-int pair)) (display " ") (display (cdr-int pair))
-```
-
-## 练习 2.6 丘奇数
-
-```scheme
-(define zero (lambda (f)
-               (lambda (x) x)))
-
-(define (add-1 n)
-  (lambda (f)
-    (lambda (x)
-      (f ((n f) x)))))
-
-(define one (lambda (f)
-              (lambda (x)
-                (f x))))
-
-(define two (lambda (f)
-              (lambda (x)
-                (f (f x)))))
-
-(define (add m n)
-  (lambda (f)
-    (lambda (x)
-      ((m f) ((n f) x)))))
-
-(define (church->number n)
-  ((n (lambda (x) (+ x 1))) 0))
-
-(display (church->number (add one two)))
-```
-
-## 练习 2.7 定义 `upper-bound` 和 `lower-bound`
-```scheme
-(define (make-interval a b) (cons a b))
-
-(define (upper-bound x) (cdr x))
-
-(define (lower-bound x) (car x))
-```
-
-## 练习 2.8 定义 `sub-interval`
-```scheme
-(define (sub-interval x y)
-  (make-interval (- (lower-bound x) (upper-bound y))
-                 (- (upper-bound x) (lower-bound y))))
-```
-
-## 练习 2.9 区间的宽度
-```scheme
-(define (width x)
-  (/ (- (upper-bound x) (lower-bound x)) 2))
-```
-
-$$
-\begin{align}
-& (\mathrm{width} \ (\mathrm{add}\ [x_1,y_1]\ [x_2,y_2])) \\
-\implies & (\mathrm{width}\ [x_1 + x_2, y_1 + y_2]) \\
-\implies & \frac{(y_1 + y_2) - (x_1 + x_2)}{2} \\
-\implies & \frac{y_1 - x_1}{2} + \frac{y_2 - x_2}{2} \\
-\implies & (\mathrm{width}\ [x_1, y_1]) + (\mathrm{width}\ [x_2, y_2])
-\end{align}
-$$
-
-$$
-\begin{align}
-& (\mathrm{width} \ (\mathrm{sub}\ [x_1,y_1]\ [x_2,y_2])) \\
-\implies & (\mathrm{width}\ [x_1 - y_2, y_1 - x_2]) \\
-\implies & \frac{(y_1 - x_2) - (x_1 - y_2)}{2} \\
-\implies & \frac{y_1 - x_1}{2} + \frac{y_2 - x_2}{2} \\
-\implies & (\mathrm{width}\ [x_1, y_1]) + (\mathrm{width}\ [x_2, y_2])
-\end{align}
-$$
-
-## 练习 2.10 处理被除区间跨过 0 的情况
-```scheme
-(define (div-interval x y)
-  (if (<= (* (lower-bound y) (upper-bound y)) 0)
-      (error "can not divide a span that spans zero.")
-      (mul-interval
-       x
-       (make-interval (/ 1.0 (upper-bound y))
-                      (/ 1.0 (lower-bound y))))))
-```
-
-## 练习 2.11 将 `mul-interval` 分解为 9 种情况
-TODO
-
-
-## 练习 2.12
-TODO
-
-## 练习 2.13
-TODO
-
-## 练习 2.14
-TODO
-
-## 练习 2.15
-TODO
-
-## 练习 2.16
-TODO
-
-# 2.2 层次性数据和闭包性质
-
-## 示例 表操作
-
-```scheme
+<SchemeCode client:load code={`
 (define (list-ref items n)
   (if (= n 0)
       (car items)
       (list-ref (cdr items) (- n 1))))
 
+(list-ref '(1 2 3) 1)
+`} />
+
+<SchemeCode client:load code={`
 (define (length items)
   (if (null? items)
       0
       (+ 1 (length (cdr items)))))
 
-(define (length* items)
+(length '(1 2 3))
+`} />
+
+<SchemeCode client:load code={`
+(define (length items)
   (define (length-iter a count)
     (if (null? a)
         count
         (length-iter (cdr a) (+ 1 count))))
   (length-iter items 0))
 
+(length '(1 2 3))
+`} />
+
+<SchemeCode client:load code={`
 (define (append list1 list2)
   (if (null? list1)
       list2
       (cons (car list1) (append (cdr list1) list2))))
-```
 
+(append '(1 2 3) '(4 5 6))
+`} />
 
-## 练习 2.17 定义 `last-pair`
-```scheme
+## 练习 2.17
+
+定义 `last-pair`
+
+<SchemeCode client:load code={`
+(define (last-pair l)
+  (if (null? (cdr l))
+      l
+      (last-pair (cdr l))))
+
+(last-pair '(1 2 3))
+`} />
+
+## 练习 2.18
+
+定义 `reverse`
+
+<SchemeCode client:load code={`
 (define (reverse items)
   (define (iter xs ys)
     (if (null? xs)
         ys
         (iter (cdr xs) (cons (car xs) ys))))
-  (iter items nil))
-```
+  (iter items '()))
 
-## 练习 2.18 定义 `reverse`
-```scheme
-(define (reverse items)
-  (define (iter xs ys)
-    (if (null? xs)
-        ys
-        (iter (cdr xs) (cons (car xs) ys))))
-  (iter items nil))
-```
+(reverse '(1 2 3))
+`} />
 
-## 练习 2.19 换零钱
-```scheme
+## 练习 2.19
+
+换零钱
+
+<SchemeCode client:load code={`
 (define us-coins (list 50 25 10 5 1))
 (define uk-coins (list 100 50 20 10 5 2 1))
 
@@ -357,10 +97,15 @@ TODO
             (cc (- amount (first-denomination coin-values)) coin-values))]))
 
 (cc 100 us-coins)
-```
+`} />
 
-## 练习 2.20 `same-parity`
-```scheme
+## 练习 2.20
+
+过程 `+`、`*`、`list` 可以取任意个数的实际参数。定义这类过程的方式是采用一种 _带点尾部记法_ 的 `define` 。在一个过程定义中，如果形式参数表的最后一个参数之前有一个点号，那就表明，当这一过程被实际调用时，前面各个形式参数（如果有的话）将以前面的各个实际参数为值，与平常一样。但最后一个形式参数将以所有剩下的实际参数的表为值。
+
+采用这种记法写出过程 `same-parity` ，它以一个或多个整数为参数，返回所有与其第一个参数有着相同奇偶性的参数形成的表。
+
+<SchemeCode client:load code={`
 (define (same-parity . items)
   (let ([parity (remainder (car items) 2)])
     (define (helper xs)
@@ -369,63 +114,99 @@ TODO
              (cons (car xs) (helper (cdr xs)))]
             [else (helper (cdr xs))]))
     (helper items)))
-```
 
-## 实例 对象的映射
-```scheme
+(list (same-parity 1 2 3 4 5)
+      (same-parity 2 3 4 5 6))
+`} />
+
+# 对表的映射
+
+## `scale-list`
+
+<SchemeCode client:load code={`
 (define (scale-list items factor)
   (if (null? items)
-      nil
+      '()
       (cons (* (car items) factor)
             (scale-list (cdr items) factor))))
 
+(scale-list '(1 2 3 4 5) 10)
+`} />
+
+## `map`
+
+<SchemeCode client:load code={`
 (define (map proc items)
   (if (null? items)
-      nil
+      '()
       (cons (proc (car items))
             (map proc (cdr items)))))
 
-(define (scale-list* items factor)
+(define (scale-list items factor)
   (map (lambda (x) (* x factor))
        items))
-```
+
+(scale-list '(1 2 3 4 5) 10)
+`} />
+
 ## 更具有一般性的 `map` 过程
 Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参数，将这个过程应用于所有表的第一个元素，而后应用它们的第二个元素，如此下去，返回所有结果的表，例如：
-```scheme
+
+<SchemeCode client:load code={`
 (map + (list 1 2 3) (list 40 50 60) (list 700 800 900))
+`} />
 
-'(741 852 963)
-
+<SchemeCode client:load code={`
 (map (lambda (x y) (+ x (* 2 y)))
   (list 1 2 3)
   (list 4 5 6))
+`} />
 
-'(9 12 15)
-```
+## 练习 2.21
 
-## 练习 2.21 `square-list` 的实现
-```scheme
+`square-list` 的实现
+
+<SchemeCode client:load code={`
 (define (square-list items)
   (define (square x) (* x x))
   (if (null? items)
-      nil
+      '()
       (cons (square (car items)) (square-list (cdr items)))))
 
 (define (square-list* items)
   (define (square x) (* x x))
   (map square items))
-```
 
-## 练习 2.22 `square-list` 的迭代实现
+(square-list '(1 2 3 4))
+`} />
+
+## 练习 2.22
+
+`square-list` 的迭代实现
+
+<SchemeCode client:load code={`
+(define (square-list items)
+  (define (square x) (* x x))
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons (square (car things))
+                    answer))))
+  (iter items '()))
+
+(square-list '(1 2 3 4))
+`} />
+
 ```scheme
 (iter '(1 2 3) '())
 (iter '(2 3) '(1))
-(iter '(3) '(1 2))
-(iter '() '(1 2 3))
+(iter '(3) '(4 1))
+(iter '() '(9 4 1))
 ```
 
-```scheme
-(define (square-list** items)
+<SchemeCode client:load code={`
+(define (square-list items)
   (define (square x) (* x x))
   (define (iter things answer)
     (if (null? things)
@@ -433,24 +214,27 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
         (iter (cdr things)
               (cons answer
                     (square (car things))))))
-  (iter items nil))
+  (iter items '()))
 
-(square-list** '(1 2 3 4))
-```
+(square-list '(1 2 3 4))
+`} />
 
-结果为
-```
-((((() . 1) . 4) . 9) . 16)
-```
-序列中的每一个序对的第二个元素应该指向下一个序对
+## 练习 2.23
 
-## 练习 2.23 `for-each` 的实现
-```scheme
+`for-each` 的实现
+<SchemeCode client:load code={`
 (define (for-each f items)
   (if (null? (cdr items))
       (f (car items))
-      (begin (f (car items)) (for-each f (cdr items)))))
-```
+      (begin (f (car items))
+             (for-each f (cdr items)))))
+
+(for-each
+  (lambda (x) (display x) (display ", "))
+  '(1 2 3))
+`} />
+
+# 层次性结构
 
 ## 实例 `count-leaves` 的实现
 三种情况：
@@ -458,77 +242,97 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 2. 对于树 `x` 的 `count-leaves` 应该是 `(count-leaves (car x))` 和 `(count-leaves (cdr x))` 的和
 3. 一个树叶的 `count-leaves` 是 1
 
-```scheme
+<SchemeCode client:load code={`
 (define (count-leaves x)
   (cond [(null? x) 0]
         [(pair? x) (+ (count-leaves (car x)) (count-leaves (cdr x)))]
         [else 1]))
-```
 
-## 练习 2.24 `(list 1 (list 2 (list 3 4)))` 所代表的树
-```scheme
-(1 (2 (3 4)))
-```
+(count-leaves (list 1 (list 2 (list 3 4))))
+`} />
 
-## 练习 2.25 给出下表中能够取出 7 的 `car` 和 `cdr` 组合
-```scheme
+## 练习 2.24
+
+<SchemeCode client:load code={`
+(list 1 (list 2 (list 3 4)))
+`} />
+
+## 练习 2.25
+
+给出能从下面各表中取出 7 的 `car` 和 `cdr` 的组合
+
+<SchemeCode client:load code={`
 (define a '(1 3 (5 7) 9))
-(define b '((7)))
-(define c '(1 (2 (3 (4 (5 (6 7)))))))
-
 (car (cdr (car (cdr (cdr a)))))
+`} />
 
+<SchemeCode client:load code={`
+(define b '((7)))
 (car (car b))
+`} />
 
+<SchemeCode client:load code={`
+(define c '(1 (2 (3 (4 (5 (6 7)))))))
 (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr c))))))))))))
-```
+`} />
 
 ## 练习 2.26
-```scheme
+<SchemeCode client:load code={`
 (define x (list 1 2 3))
 (define y (list 4 5 6))
 
-(append x y)
-; (1 2 3 4 5 6)
-(cons x y)
-; ((1 2 3) 4 5 6)
-(list x y)
-; ((1 2 3) (4 5 6))
-```
+(list (append x y)
+      (cons x y)
+      (list x y))
+`} />
 
-## 练习 2.27 `deep-reverse`
-```scheme
+## 练习 2.27
+`deep-reverse`
+
+<SchemeCode client:load code={`
 (define (reverse items)
   (define (iter xs ys)
     (if (null? xs)
         ys
         (iter (cdr xs) (cons (car xs) ys))))
-  (iter items nil))
-```
+  (iter items '()))
 
-```scheme
 (define (deep-reverse items)
   (define (iter rest answer)
     (if (null? rest)
         answer
         (let ([cur (if (pair? (car rest))
-                       (deep-reverse (car rest))
-                       (car rest))])
+                        (deep-reverse (car rest))
+                        (car rest))])
           (iter (cdr rest) (cons cur answer)))))
-  (iter items nil))
-```
+  (iter items '()))
 
-## 练习 2.28 `fringe`
-```scheme
+(define x (list (list 1 2) (list 3 4)))
+
+(list (reverse x)
+      (deep-reverse x))
+`} />
+
+## 练习 2.28
+
+`fringe`
+
+<SchemeCode client:load code={`
 (define (fringe x)
   (cond [(null? x) '()]
         [(pair? x) (append (fringe (car x)) (fringe (cdr x)))]
         [else (list x)]))
-```
 
+(define x (list (list 1 2) (list 3 4)))
 
-## 练习 2.29 二叉活动体
-```scheme
+(fringe x)
+`} />
+
+## 练习 2.29
+
+二叉活动体
+
+<SchemeCode client:load code={`
 (define (make-mobile left right)
   (list left right))
 
@@ -558,7 +362,7 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
                (make-branch 1 (make-mobile (make-branch 1 4)
                                            (make-branch 1 4)))))
 
-(define (is-balance mobile)
+(define (is-balanced mobile)
   (if (pair? mobile)
       (let ([left-len (branch-length (left-branch mobile))]
             [right-len (branch-length (right-branch mobile))]
@@ -566,12 +370,16 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
             [right-struct (branch-structure (right-branch mobile))])
         (and (= (* left-len (total-weight left-struct))
                 (* right-len (total-weight right-struct)))
-             (is-balance left-struct)
-             (is-balance right-struct)))
+             (is-balanced left-struct)
+             (is-balanced right-struct)))
       #t))
-```
 
-## 实例 对树的映射
+(list (is-balanced mobile-x)
+      (is-balanced mobile-balanced))
+`} />
+
+## 对树的映射
+
 ```scheme
 (define (scale-tree tree factor)
   (cond [(null? tree) '()]
@@ -587,7 +395,10 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
        tree))
 ```
 
-## 练习 2.30 定义 `square-tree`
+## 练习 2.30
+
+定义 `square-tree`
+
 ```scheme
 (define (square x) (* x x))
 
@@ -605,7 +416,10 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
        tree))
 ```
 
-## 练习 2.31 `tree-map`
+## 练习 2.31
+
+`tree-map`
+
 ```scheme
 (define (tree-map f tree)
   (map (lambda (sub-tree)
@@ -617,7 +431,10 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 (define (square-tree** tree) (tree-map square tree))
 ```
 
-## 练习 2.32 求集合的所有子集
+## 练习 2.32
+
+求集合的所有子集
+
 ```scheme
 (define (subsets s)
   (if (null? s)
@@ -627,7 +444,10 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
                           rest)))))
 ```
 
+# 序列操作的抽象
+
 ## 实例 计算值为奇数的叶子的平方和
+
 ```scheme
 (define (sum-odd-squares tree)
   (cond [(null? tree) 0]
@@ -638,6 +458,7 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 ```
 
 ## 实例 构造出所有偶数的斐波那契数的一个表
+
 ```scheme
 (define (even-fibs n)
   (define (fib-iter a b count)
@@ -658,6 +479,7 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 ```
 
 ## 实例 信号流辅助函数
+
 ```scheme
 (define (filter predicate sequence)
   (cond [(null? sequence) nil]
@@ -683,7 +505,8 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
                       (enumerate-tree (cdr tree)))]))
 ```
 
-## 实例 重新实现的 `sum-odd-squares` 和 `even-fibs`
+## 实例 重新实现 `sum-odd-squares` 和 `even-fibs`
+
 ```scheme
 (define (sum-odd-squares* tree)
   (accumulate +
@@ -707,7 +530,10 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
                            (enumerate-interval 0 n)))))
 ```
 
-## 练习 2.33 将一些基本的表操作看作累积的定义
+## 练习 2.33
+
+将一些基本的表操作看作累积的定义
+
 ```scheme
 (define (map* p sequence)
   (accumulate (lambda (x rest) (cons (p x) rest)) nil sequence))
@@ -719,7 +545,10 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
   (accumulate (lambda (x y) (+ y 1)) 0 sequence))
 ```
 
-## 练习 2.34 Horner 规则
+## 练习 2.34
+
+Horner 规则
+
 对于 $x$ 的某个给定值，求出一个多项式在 $x$ 的值，也可以形式化为一种累积。假定需要求下面的多项式：
 
 $$
@@ -739,7 +568,10 @@ $$
               coefficient-sequence))
 ```
 
-## 练习 2.35 将 `count-leaves` 重新定义为一个累积
+## 练习 2.35
+
+将 `count-leaves` 重新定义为一个累积
+
 ```scheme
 (define (count-leaves* t)
   (accumulate + 0 (map (lambda (root)
@@ -749,7 +581,10 @@ $$
                                         (count-leaves (cdr root)))])) t)))
 ```
 
-## 练习 2.36 定义 `accumulate-n`
+## 练习 2.36
+
+定义 `accumulate-n`
+
 ```scheme
 (define (accumulate-n op init seqs)
   (if (null? (car seqs))
@@ -758,7 +593,10 @@ $$
             (accumulate-n op init (map cdr seqs)))))
 ```
 
-## 练习 2.37 矩阵操作
+## 练习 2.37
+
+矩阵操作
+
 ```scheme
 (define (dot-product v w)
   (accumulate + 0 (map * v w)))
@@ -776,7 +614,10 @@ $$
                   (dot-product r c)) cols)) m)))
 ```
 
-## 练习 2.38 `fold-right`
+## 练习 2.38
+
+`fold-right`
+
 ```scheme
 (define (fold-left op initial sequence)
   (define (iter result rest)
@@ -806,7 +647,10 @@ $$
 ```
 `op` 满足交换率时， `fold-right` 和 `fold-left` 在任何序列上都产生相同的结果
 
-## 练习 2.39 分别使用 `fold-right` 和 `fold-left` 实现 `reverse`
+## 练习 2.39
+
+分别使用 `fold-right` 和 `fold-left` 实现 `reverse`
+
 ```scheme
 (define (reverse* sequence)
   (fold-right (lambda (x y) (append y (list x))) nil sequence))
@@ -814,6 +658,8 @@ $$
 (define (reverse** sequence)
   (fold-left (lambda (x y) (cons y x)) nil sequence))
 ```
+
+## 嵌套映射
 
 ## 实例 找出和为质数的序对
 ```scheme
@@ -863,7 +709,10 @@ $$
           sequence))
 ```
 
-## 练习 2.40 `unique-pairs`
+## 练习 2.40
+
+`unique-pairs`
+
 ```scheme
 (define (unique-pairs n)
   (flatmap (lambda (i)
@@ -876,7 +725,10 @@ $$
        (filter prime-sum? (unique-pairs n))))
 ```
 
-## 练习 2.41 所有小于等于给定整数 $n$ 的正相异整数组成的有序三元组，每个三元组的三个元之和为给定的整数 $s$
+## 练习 2.41
+
+所有小于等于给定整数 $n$ 的正相异整数组成的有序三元组，每个三元组的三个元之和为给定的整数 $s$
+
 ```scheme
 (define (unique-triples n)
   (flatmap (lambda (i)
@@ -893,7 +745,10 @@ $$
                    (unique-triples n))))
 ```
 
-## 练习 2.42 八皇后问题
+## 练习 2.42
+
+八皇后问题
+
 ```scheme
 (define (all pre lst)
   (if (null? lst)
@@ -939,7 +794,10 @@ $$
 
 ```
 
-## 练习 2.43 Louis Reasoner 遇到的问题
+## 练习 2.43
+
+Louis Reasoner 遇到的问题
+
 ```scheme
 (define (louis-queens board-size)
   (define (queen-cols k)
@@ -955,7 +813,12 @@ $$
 ```
 调用 `queen-cols` 的次数翻了 `board-size` 倍
 
-## 练习 2.44 定义 `corner-split` 中使用的过程 `up-split`
+# 实例 一个图形语言
+
+## 练习 2.44
+
+定义 `corner-split` 中使用的过程 `up-split`
+
 ```scheme
 (define (up-split painter n)
   (if (= n 0)
@@ -963,195 +826,4 @@ $$
       (let ([smaller (up-split painter (- n 1))])
         (below painter (beside smaller smaller)))))
 ```
-
-# 2.3 符号数据
-
-## `memq` 的实现
-
-<SchemeCode client:load code={`
-(define (memq item x)
-  (cond [(null? x) #f]
-        [(eq? item (car x)) x]
-        [else (memq item (cdr x))]))
-        
-(list (memq 'apple '(pear banana prune))
-      (memq 'apple '(x (apple sauce) y apple pear)))
-`} />
-
-## 练习 2.53 解释器在求值下面各表达式时将打印出什么
-<SchemeCode client:load code={`
-(display (list 'a 'b 'c)) (newline)
-(display (list (list 'george))) (newline)
-(display (cdr '((x1 x2) (y1 y2)))) (newline)
-(display (cadr '((x1 x2) (y1 y2)))) (newline)
-(display (pair? (car '(a short list)))) (newline)
-(display (memq 'red '((red shoes) (blue socks)))) (newline)
-(display (memq 'red ((red shoes blue socks)))) (newline)
-`}/>
-
-## 练习 2.54 `equal?` 的定义
-<SchemeCode client:load code={`
-(define (equals? x y)
-  (cond [(and (pair? x) (pair? y))
-         (and (equals? (car x) (car y))
-              (equals? (cdr x) (cdr y)))]
-        [else (eq? x y)]))
-
-(list (equals? '(this is a list) '(this is a list))
-      (equals? '(this is a list) '(this (is a) list)))
-`} />
-
-## 练习 2.54 `(car ''abracadabra)` 的输出为 `quote`
-<SchemeCode client:load code={`
-(car ''abracadabra)
-`} />
-
-```scheme
-(car ''abracadabra)
-=> (car (quote (quote abracadabra)))
-=> (car '(quote abracadabra))
-=> 'quote
-```
-
-## 实例 符号求导
-$$
-\newcommand{\deriv}[2]{\frac{\mathrm{d} #1}{\mathrm{d} #2}}
-
-\begin{aligned}
-\deriv{c}{x} &= 0 \\
-\deriv{x}{x} &= 1 \\
-\deriv{\left( u + v \right)}{x} &= \deriv{u}{x} + \deriv{v}{x} \\
-\deriv{uv}{x} &= u\left( \deriv{v}{x} \right) + v \left(\deriv{u}{x}\right) \\
-\deriv{u^n}{x} &= nu^{n-1}\left( \deriv{u}{x} \right)
-\end{aligned}
-$$
-
-<SchemeCode client:load code={`
-; 变量 => 符号
-(define (variable? x) (symbol? x))
-
-; 两个变量相同 => 符号相同
-(define (same-variable? v1 v2)
-  (and (variable? v1) (variable? v2) (eq? v1 v2)))
-
-; 和式与乘式都构造为表
-(define (=number? exp num)
-  (and (number? exp) (= exp num)))
-
-(define (make-sum a1 a2)
-  (cond [(=number? a1 0) a2]
-        [(=number? a2 0) a1]
-        [(and (number? a1) (number? a2)) (+ a1 a2)]
-        [else (list '+ a1 a2)]))
-
-(define (make-product m1 m2)
-  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
-        [(=number? m1 1) m2]
-        [(=number? m2 1) m1]
-        [(and (number? m1) (number? m2)) (* m1 m2)]
-        [else (list '* m1 m2)]))
-
-; 和式 => 第一个元素为符号 + 的表
-(define (sum? x)
-  (and (pair? x) (eq? (car x) '+)))
-
-; 被加数 => 表示和式的表里的第二个元素
-(define (addend s) (cadr s))
-
-; 加数 => 表示和式的表里的第三个元素
-(define (augend s) (caddr s))
-
-; 乘式 => 第一个元素为符号 * 的表
-(define (product? x)
-  (and (pair? x) (eq? (car x) '*)))
-
-; 被乘数 => 表示乘式的表里的第二个元素
-(define (multiplier p) (cadr p))
-
-; 乘数 => 表示乘式的表里的第三个元素
-(define (multiplicand p) (caddr p))
-
-(define (deriv exp var)
-  (cond [(number? exp) 0]
-        [(variable? exp)
-         (if (same-variable? exp var) 1 0)]
-        [(sum? exp)
-         (make-sum (deriv (addend exp) var)
-                   (deriv (augend exp) var))]
-        [(product? exp)
-         (make-sum (make-product (multiplier exp)
-                                 (deriv (multiplicand exp) var))
-                   (make-product (deriv (multiplier exp) var)
-                                 (multiplicand exp)))]
-        [else
-         (error "unknown expression type -- DERIV" exp)]))
-
-(list (deriv '(+ x 3) 'x)
-      (deriv '(* x y) 'x)
-      (deriv '(* (* x y) (+ x 3)) 'x))
-`} />
-
-## 练习 2.56 扩充指数的求导规则
-<SchemeCode client:load code={`
-(define (variable? x) (symbol? x))
-(define (same-variable? v1 v2) (and (variable? v1) (variable? v2) (eq? v1 v2)))
-(define (=number? exp num)
-  (and (number? exp) (= exp num)))
-(define (make-sum a1 a2)
-  (cond [(=number? a1 0) a2]
-        [(=number? a2 0) a1]
-        [(and (number? a1) (number? a2)) (+ a1 a2)]
-        [else (list '+ a1 a2)]))
-(define (make-product m1 m2)
-  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
-        [(=number? m1 1) m2]
-        [(=number? m2 1) m1]
-        [(and (number? m1) (number? m2)) (* m1 m2)]
-        [else (list '* m1 m2)]))
-(define (sum? x)
-  (and (pair? x) (eq? (car x) '+)))
-(define (addend s) (cadr s))
-(define (augend s) (caddr s))
-(define (product? x)
-  (and (pair? x) (eq? (car x) '*)))
-(define (multiplier p) (cadr p))
-(define (multiplicand p) (caddr p))
-
-(define (exponentiation? x) (and (pair? x) (eq? (car x) 'expt)))
-
-(define (base x) (and (pair? x) (cadr x)))
-
-(define (exponent x) (and (pair? x) (caddr x)))
-
-(define (make-exponentiation base exponent)
-  (cond [(=number? base 0) 0]
-        [(=number? base 1) 1]
-        [(=number? exponent 0) 1]
-        [(=number? exponent 1) base]
-        [else (list 'expt base exponent)]))
-
-(define (deriv exp var)
-  (cond [(number? exp) 0]
-        [(variable? exp)
-         (if (same-variable? exp var) 1 0)]
-        [(sum? exp)
-         (make-sum (deriv (addend exp) var)
-                   (deriv (augend exp) var))]
-        [(product? exp)
-         (make-sum (make-product (multiplier exp)
-                                 (deriv (multiplicand exp) var))
-                   (make-product (deriv (multiplier exp) var)
-                                 (multiplicand exp)))]
-        [(exponentiation? exp)
-         (make-product (exponent exp)
-                       (make-exponentiation (base exp)
-                                            (- (exponent exp) 1)))]
-        [else
-         (error "unknown expression type -- DERIV" exp)]))
-
-(deriv '(expt (- x 1) 2) 'x)
-`}/>
-
-
-## 练习 2.57 扩充求导程序，使之能处理任意数量项的和与乘积
-> Hint: 只修改和与乘积的表示，而完全不修改过程 `deriv` 的方式完成这一扩充
+<Todo />

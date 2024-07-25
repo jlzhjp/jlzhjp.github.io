@@ -21,16 +21,14 @@ const { Content, headings } = await post.render()
 
 <BasicLayout title={title} description={description}>
   <main class="mx-4">
-    <article class="max-w-[1080px] mx-auto">
-      <div class="blog-font-pixel">
-        <div>
-          <h1 class="text-4xl m-4 text-center">{title}</h1>
-          <div class="text-center"><FormattedDate date={pubDate} /></div>
-          <hr class="border-4 mx-4 my-8 border-[var(--text)]" />
-        </div>
-        <div class="md-body">
-          <Content />
-        </div>
+    <article class="max-w-[1080px] mx-auto blog-font-pixel">
+      <div>
+        <h1 class="text-4xl m-4 text-center">{title}</h1>
+        <div class="text-center"><FormattedDate date={pubDate} /></div>
+        <hr class="border-4 mx-4 my-8 border-[var(--text)]" />
+      </div>
+      <div class="md-body">
+        <Content />
       </div>
     </article>
     <div
