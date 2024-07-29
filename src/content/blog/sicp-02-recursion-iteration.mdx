@@ -4,7 +4,7 @@ description: "对应：SICP 1.2 过程及其产生的计算"
 pubDate: "Jul 24 2024"
 ---
 
-import SchemeCode from "../../components/SchemeCode.tsx"
+import SchemeRunner from "../../components/SchemeRunner.tsx"
 import Todo from "../../components/Todo.astro"
 
 # 线性的递归和迭代
@@ -32,14 +32,16 @@ $$
 n! = n \cdot [(n - 1) \cdot (n - 2) \dots 3 \cdot 2 \cdot 1] = n \cdot (n - 1)!
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (factorial n)
  (if (= n 1)
      1
      (* n (factorial (- n 1)))))
 
 (factorial 6)
-`} />
+```
+</SchemeRunner>
 
 #### 求值过程
 
@@ -68,7 +70,8 @@ $$
 \end{aligned}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (factorial n)
  (define (fact-iter product counter max-count)
    (if (> counter max-count)
@@ -79,7 +82,8 @@ $$
  (fact-iter 1 1 n))
 
 (factorial 6)
-`}/>
+```
+</SchemeRunner>
 
 #### 求值过程
 
@@ -104,7 +108,8 @@ $$
 ## 练习1.9
 
 加法的递归版本
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (inc x) (+ x 1))
 (define (dec x) (- x 1))
 (define (add a b)
@@ -113,7 +118,8 @@ $$
       (inc (add (dec a) b))))
 
 (add 4 5)
-`} />
+```
+</SchemeRunner>
 
 ```scheme
 (+ 4 5)
@@ -129,7 +135,8 @@ $$
 ```
 
 加法的迭代版本
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (inc x) (+ x 1))
 (define (dec x) (- x 1))
 (define (add a b)
@@ -138,7 +145,8 @@ $$
       (add (dec a) (inc b))))
 
 (add 4 5)
-`} />
+```
+</SchemeRunner>
 
 ```scheme
 (+ 4 5)
@@ -163,7 +171,8 @@ $$
   \end{cases}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (A x y)
   (cond [(= y 0) 0]
         [(= x 0) (* 2 y)]
@@ -174,7 +183,8 @@ $$
 (list (A 1 10)
       (A 2 4)
       (A 3 3))
-`} />
+```
+</SchemeRunner>
 
 ```scheme
 (A 1 10)
@@ -224,7 +234,8 @@ $$
 ## 实例 斐波那契数列
 
 ### 递归实现
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (fib n)
   (cond ((= n 0) 0)
         ((= n 1) 1)
@@ -239,7 +250,8 @@ $$
   (g 1))
 
 (f 10)
-`} />
+```
+</SchemeRunner>
 
 * Time Complexity: $O(fib(n))$
 * Space Complexity: $O(n)$
@@ -250,7 +262,8 @@ $$
 
 ### 迭代实现
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (fib n)
   (define (fib-iter a b count)
     (if (= count 0)
@@ -267,11 +280,13 @@ $$
   (g 1))
 
 (f 10)
-`} />
+```
+</SchemeRunner>
 
 # 实例 换零钱方式的统计
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (count-change amount)
   (cc amount 5))
 
@@ -291,7 +306,8 @@ $$
         ((= kinds-of-coins 5) 50)))
 
 (count-change 100)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.11
 
@@ -302,7 +318,8 @@ f(n - 1) + 2 f(n - 2) + 3 f(n - 3) &, n \ge 3
 \end{cases}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (f n)
   (if (< n 3)
       n
@@ -311,9 +328,11 @@ $$
          (* 3 (f (- n 3))))))
 
 (f 10)
-`} />
+```
+</SchemeRunner>
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (f n)
   (define (f-iter i f-n-1 f-n-2 f-n-3)
     (if (> i n)
@@ -326,13 +345,15 @@ $$
       n
       (f-iter 3 2 1 0)))
 (f 10)
-`}/>
+```
+</SchemeRunner>
 
 ## 练习 1.12
 
 计算帕斯卡三角形
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (pascal-triangle n-row n-col)
   (if (= n-row 1)
       (if (= n-col 1) 1 0)
@@ -356,7 +377,8 @@ $$
   (iter 1))
 
 (print-pascal-triangle 5)
-`}/>
+```
+</SchemeRunner>
 
 ## 练习 1.13
 $$
@@ -446,18 +468,21 @@ b^0 &= 1
 \end{aligned}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (expt b n)
   (if (= n 0)
       1
       (* b (expt b (- n 1)))))
 
 (expt 2 8)
-`} />
+```
+</SchemeRunner>
 
 
 使用迭代实现
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (expt b n)
   (define (iter b counter product)
     (if (= counter 0)
@@ -466,7 +491,8 @@ $$
   (iter b n 1))
 
 (expt 2 8)
-`} />
+```
+</SchemeRunner>
 
 通过连续求平方，使用更少的步骤完成乘幂运算
 
@@ -477,7 +503,8 @@ b^n=b \cdot b^{n - 1} &,n \text{是奇数}
 \end{cases}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (fast-expt b n)
   (define (square x) (* x x))
   (cond [(= n 0) 1]
@@ -485,7 +512,8 @@ $$
         [else (* b (fast-expt b (- n 1)))]))
 
 (fast-expt 2 8)
-`} />
+```
+</SchemeRunner>
 
 
 ## 练习 1.16
@@ -522,7 +550,8 @@ n' &= n - 1
 \end{aligned}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (fast-expt b n)
   (define (square x) (* x x))
   (define (fast-expt-iter a b n)
@@ -533,7 +562,8 @@ $$
   (fast-expt-iter 1 b n))
 
 (fast-expt 2 8)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.17
 
@@ -543,14 +573,16 @@ $$
 a \cdot b = a + a \cdot (b - 1)
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (* a b)
   (if (= b 0)
       0
       (+ a (* a (- b 1)))))
 
 (* 2 8)
-`} />
+```
+</SchemeRunner>
 
 利用 `double` 和 `halve` 在对数时间内求乘积
 
@@ -563,7 +595,8 @@ a &, b = 1
 \end{cases}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (double x) (* 2 x))
 (define (halve x) (/ x 2))
 
@@ -573,7 +606,8 @@ $$
         [else (+ a (fast-mul a (- b 1)))]))
 
 (fast-mul 2 8)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.18
 
@@ -587,7 +621,8 @@ c &,\ b = 0
 \end{cases}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (double x) (* 2 x))
 (define (halve x) (/ x 2))
 
@@ -599,7 +634,8 @@ $$
   (fast-mul-iter a b 0))
 
 (fast-mul 3 4)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.19
 
@@ -636,7 +672,8 @@ q' &= q^2 + 2 p q
 \end{aligned}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (fib n)
   (define (square x) (* x x))
   (define (fib-iter a b p q count)
@@ -661,11 +698,13 @@ $$
   (g 1))
 
 (f 10)
-`} />
+```
+</SchemeRunner>
 
 # 实例 最大公约数
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (gcd a b)
   (if (= b 0)
       a
@@ -673,7 +712,8 @@ $$
 
 
 (gcd 206 40)
-`}/>
+```
+</SchemeRunner>
 
 ## 练习 1.20
 使用正则序
@@ -710,7 +750,8 @@ $$
 \Theta (\sqrt{n})
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (square x) (* x x))
 
 (define (smallest-divisor n)
@@ -729,13 +770,15 @@ $$
 
 (list (prime? 97)
       (prime? 98))
-`} />
+```
+</SchemeRunner>
 
 ## 费马小定理
 
 如果 $n$ 是一个素数， $a$ 是小于 $n$ 的任意正整数，那么 $a$ 的 $n$ 次方与 $a$ 模 $n$ 同余。（两个数称为是模 $n$ 同余，如果它们除以 $n$ 的余数相同。数 $a$ 除以 $n$ 的余数称为 $a$ 取模 $n$ 的余数，或简称为 $a$ 取模 $n$ ）
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (square x) (* x x))
 
 (define (expmod base exp m)
@@ -759,7 +802,8 @@ $$
 
 (list (fast-prime? 97 3)
       (fast-prime? 98 3))
-`} />
+```
+</SchemeRunner>
 
 对于指数 $e > 1$ 的情况，所采用的规约方式基于以下事实：
 对任意的 $x, y, m$ ，有
@@ -785,7 +829,8 @@ $$
 ## 练习 1.21
 找出 199、1999、19999的最小因子
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (square x) (* x x))
 
 (define (divides? a b)
@@ -802,7 +847,8 @@ $$
 (list (smallest-divisor 199)
       (smallest-divisor 1999)
       (smallest-divisor 19999))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.22
 
@@ -867,7 +913,8 @@ $$
 
 证明 Carmichael 数能够骗过费马检查
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (square x) (* x x))
 
 (define (expmod base exp m)
@@ -892,7 +939,8 @@ $$
       (full-fermat-test 2465)
       (full-fermat-test 2821)
       (full-fermat-test 6601))
-`}/>
+```
+</SchemeRunner>
 
 ## 练习 1.28
 费马检查的一种不会被欺骗的变形称为 Miller-Rabin 检查

@@ -4,13 +4,14 @@ description: "对应：SICP 3.1 赋值和局部状态"
 pubDate: "Jul 27 2024"
 ---
 
-import SchemeCode from "../../components/SchemeCode.tsx"
+import SchemeRunner from "../../components/SchemeRunner.tsx"
 import Todo from "../../components/Todo.astro"
 
 # 局部状态变量
 
 ## 全局状态变量
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define balance 100)
 
 (define (withdraw amount)
@@ -21,7 +22,8 @@ import Todo from "../../components/Todo.astro"
 
 (display (withdraw 50)) (newline)
 (display (withdraw 100))
-`} />
+```
+</SchemeRunner>
 
 ## 局部状态变量
 ```scheme
@@ -35,7 +37,8 @@ import Todo from "../../components/Todo.astro"
 ```
 
 ## 各自独立的局部状态
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-withdraw balance)
   (lambda (amount)
     (if (>= balance amount)
@@ -50,10 +53,12 @@ import Todo from "../../components/Todo.astro"
 (display (W2 70)) (newline)
 (display (W2 40)) (newline)
 (display (W1 40))
-`} />
+```
+</SchemeRunner>
 
 ## 消息传递风格
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-account balance)
   (define (withdraw amount)
     (if (>= balance amount)
@@ -78,12 +83,14 @@ import Todo from "../../components/Todo.astro"
 (display ((acc 'withdraw) 60)) (newline)
 (display ((acc 'deposit) 40)) (newline)
 (display ((acc 'withdraw) 60))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.1
 
 累加器
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-accumulator initial)
   (let ([value initial])
     (lambda (x)
@@ -94,13 +101,15 @@ import Todo from "../../components/Todo.astro"
 
 (display (A 10)) (newline)
 (display (A 20))
-`} />
+```
+</SchemeRunner>
 
 
 ## 练习 3.2
 
 `make-monitored`
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-monitored f)
   (let ([counter 0])
     (lambda args
@@ -113,12 +122,14 @@ import Todo from "../../components/Todo.astro"
 
 (display (s 100)) (newline)
 (display (s 'how-many-calls))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.3
 
 带密码保护的账户
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-account balance password)
   (define (withdraw amount)
     (if (>= balance amount)
@@ -142,10 +153,12 @@ import Todo from "../../components/Todo.astro"
 
 ((acc 'secret-password 'withdraw) 40)
 ((acc 'some-other-password 'deposit) 50)
-`} />
+```
+</SchemeRunner>
 
 # 引进赋值带来的利益
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (rand-update x)
   (let ([m (- (expt 2 31) 1)]
         [a 48271]
@@ -177,10 +190,12 @@ import Todo from "../../components/Todo.astro"
   (iter trials 0))
 
 (estimate-pi (expt 2 12))
-`} />
+```
+</SchemeRunner>
 
 不引入赋值下的实现
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (rand-update x)
   (let ([m (- (expt 2 31) 1)]
         [a 48271]
@@ -213,13 +228,15 @@ import Todo from "../../components/Todo.astro"
   (iter trials 0 initial-x))
 
 (estimate-pi (expt 2 12))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.5
 
 蒙特卡罗积分
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (random-in-range low high)
   (let ([range (- high low)])
     (+ low (random range))))
@@ -252,12 +269,14 @@ import Todo from "../../components/Todo.astro"
     10.0
     10000)
    (* 3.1415926535 (square 3)))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.6
 
 可以重置的随机数生成器
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (rand-update x)
   (let ([m (- (expt 2 31) 1)]
         [a 48271]
@@ -281,12 +300,14 @@ import Todo from "../../components/Todo.astro"
 (display (rand 'generate)) (newline)
 (display (rand 'generate)) (newline)
 (display (rand 'generate)) (newline)
-`} />
+```
+</SchemeRunner>
 
 # 引进赋值的代价
 
 ## 练习 3.7 可共用的银行账户对象
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-account balance password)
   (define (withdraw amount)
     (if (>= balance amount)
@@ -320,9 +341,11 @@ import Todo from "../../components/Todo.astro"
 (display ((peter-acc 'open-sesame 'deposit) 20)) (newline)
 (display ((paul-acc 'rose-bud 'withdraw) 10)) (newline)
 (display ((paul-acc 'open-sesame 'withdraw) 10))
-`} />
+```
+</SchemeRunner>
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-f)
   (let ([x -0.5])
     (lambda (y) (begin (set! x (+ x y))
@@ -338,4 +361,5 @@ import Todo from "../../components/Todo.astro"
 (set! arg2 (f 1))
 (set! arg1 (f 0))
 (display (+ arg1 arg2))
-`} />
+```
+</SchemeRunner>

@@ -4,7 +4,6 @@ description: "对应：SICP 3.3.1 - 3.3.3"
 pubDate: "Jul 29 2024"
 ---
 
-import SchemeCode from "../../components/SchemeCode.tsx"
 import SchemeRunner from "../../components/SchemeRunner.tsx"
 import Todo from "../../components/Todo.astro"
 
@@ -13,7 +12,8 @@ import Todo from "../../components/Todo.astro"
 
 `append!`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (last-pair x)
   (if (null? (cdr x))
       x
@@ -29,7 +29,8 @@ import Todo from "../../components/Todo.astro"
 (display (cdr x))
 (define w (append! x y))
 (display (cdr x))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.13
 `make-cycle`
@@ -49,7 +50,8 @@ z
 ```
 
 ## 练习 3.14
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (mystery x)
   (define (loop x y)
     (if (null? x)
@@ -64,12 +66,14 @@ z
 
 (display v) (newline)
 (display w)
-`} />
+```
+</SchemeRunner>
 
 作用：原地反转一个链表，每次循环把 `x` 的第一个元素摘下来放到 `y` 的末尾
 
 ## 练习 3.15
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (set-to-wow! x)
   (set-car! (car x) 'wow)
   x)
@@ -81,10 +85,12 @@ z
 
 (display (set-to-wow! z1)) (newline)
 (display (set-to-wow! z2))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.16
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (count-pairs x)
   (if (not (pair? x))
       0
@@ -105,10 +111,12 @@ z
 (display (count-pairs c))
 
 ; 有环的情况下不返回
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.17
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (count-pairs x)
   (define visited '())
   (define (inner node)
@@ -138,11 +146,13 @@ z
 (define cycle-list (cons '() (cons '() (cons '() '()))))
 (set-cdr! (cddr cycle-list) cycle-list)
 (display (count-pairs cycle-list))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.18
 检查链表是否有环
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (check-cycle x)
   (define visited '())
   (define (check-cycle-inner node)
@@ -168,11 +178,13 @@ z
 (define cycle-list (cons '() (cons '() (cons '() '()))))
 (set-cdr! (cddr cycle-list) cycle-list)
 (display (check-cycle cycle-list))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.19
 不使用额外空间判断链表是否有环
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (check-cycle x)
   (define (check-cycle-inner x1 x2)
     (cond [(eq? x1 x2) #t]
@@ -197,7 +209,8 @@ z
 (define cycle-list (cons '() (cons '() (cons '() '()))))
 (set-cdr! (cddr cycle-list) cycle-list)
 (display (check-cycle cycle-list))
-`} />
+```
+</SchemeRunner>
 
 ## 使用局部数状态和赋值实现数据对象的改变
 
@@ -211,7 +224,8 @@ and mutation are equipotent: Each can be implemented in terms of the other.
 
 ## 练习 3.20
 画出显示下面一系列表达式的求值过程的环境图示：
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (cons x y)
   (define (set-x! v) (set! x v))
   (define (set-y! v) (set! y v))
@@ -238,7 +252,8 @@ and mutation are equipotent: Each can be implemented in terms of the other.
 (define z (cons x x))
 (set-car! (cdr z) 17)
 (car x)
-`} />
+```
+</SchemeRunner>
 
 <Todo />
 
@@ -247,7 +262,8 @@ and mutation are equipotent: Each can be implemented in terms of the other.
 ## 练习 3.21
 
 `print-queue`
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (front-ptr queue) (car queue))
 (define (rear-ptr queue) (cdr queue))
 (define (set-front-ptr! queue item) (set-car! queue item))
@@ -297,14 +313,16 @@ and mutation are equipotent: Each can be implemented in terms of the other.
 (print-queue (insert-queue! q1 'b)) (newline)
 (print-queue (delete-queue! q1)) (newline)
 (print-queue (delete-queue! q1)) (newline)
-`} />
+```
+</SchemeRunner>
 
 
 ## 练习 3.22
 
 利用局部状态构建队列
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-queue)
   (let ([front-ptr '()]
         [rear-ptr '()])
@@ -377,7 +395,8 @@ and mutation are equipotent: Each can be implemented in terms of the other.
 (print-queue (insert-queue! q1 'b)) (newline)
 (print-queue (delete-queue! q1)) (newline)
 (print-queue (delete-queue! q1)) (newline)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 3.32
 `deque`

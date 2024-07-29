@@ -4,7 +4,7 @@ description: "对应：SICP 1.3 使用高阶函数做抽象"
 pubDate: "Jul 24 2024"
 ---
 
-import SchemeCode from "../../components/SchemeCode.tsx"
+import SchemeRunner from "../../components/SchemeRunner.tsx"
 import Todo from "../../components/Todo.astro"
 
 # 实例 求和过程的抽象
@@ -16,7 +16,8 @@ $$
 
 缓慢地收敛到 $\pi/8$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (cube x) (* x x x))
 
 (define (sum term a next b)
@@ -45,7 +46,8 @@ $$
 
 (list (sum-integers 1 10)
       (* 8 (pi-sum 1 1000)))
-`} />
+```
+</SchemeRunner>
 
 ## 求积分
 求出函数 $f$ 在范围 $a$ 和 $b$ 之间定积分的近似值，可以用下面的公式完成
@@ -56,7 +58,8 @@ $$
 \int_a^b\ f = \left[ \f{a + \frac{\d x}{2}} + \f{a + \d x + \frac{\d x}{2}} + \f{a + 2\d x + \frac{\d x}{2}} + \dots \right]\d x
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (sum term a next b)
   (if (> a b)
       0
@@ -72,7 +75,8 @@ $$
 
 (list (integral cube 0 1 0.01)
       (integral cube 0 1 0.001))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.29
 
@@ -83,7 +87,8 @@ $$
 $$
 其中，$h = (b - a) / n$， $n$ 是某个偶数，而 $y_k = f(a + kh)$（增大 $n$ 能提高近似值的精度）
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (sum term a next b)
   (if (> a b)
       0
@@ -107,13 +112,15 @@ $$
 
 (list (simpson-integral cube 0 1 100)
       (simpson-integral cube 0 1 1000))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.30
 
 基于迭代的求和函数
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (sum term a next b)
   (define (iter a result)
     (if (> a b)
@@ -130,7 +137,8 @@ $$
   (sum pi-term a pi-next b))
 
 (* 8 (pi-sum 1 1000))
-`}/>
+```
+</SchemeRunner>
 
 ## 练习 1.31
 
@@ -147,7 +155,8 @@ $$
 \frac{\pi}{2} = \prod_{n=1}^{\infty}\left(\frac{2n}{2n - 1} \cdot \frac{2n}{2n + 1}\right)
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (inc x) (+ x 1))
 
 (define (product factor a next b)
@@ -168,11 +177,13 @@ $$
 
 (list (factorial 10)
       (* (wallis-product 10000) 2))
-`} />
+```
+</SchemeRunner>
 
 写一个生成迭代过程的 `product` 函数
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (inc x) (+ x 1))
 
 (define (product factor a next b)
@@ -195,14 +206,16 @@ $$
 
 (list (factorial 10)
       (* (wallis-product 10000) 2))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.32
 
 使用 `accumulate` 实现 `sum` 和 `product`
 
 基于递归计算的实现
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (inc x) (+ x 1))
 
 (define (accmulate combiner null-value term a next b)
@@ -224,11 +237,13 @@ $$
 
 (list (sum identity 1 inc 100)
       (prod identity 1 inc 10))
-`} />
+```
+</SchemeRunner>
 
 基于迭代计算的实现
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (inc x) (+ x 1))
 
 (define (accmulate combiner null-value term a next b)
@@ -246,7 +261,8 @@ $$
 
 (list (sum identity 1 inc 100)
       (prod identity 1 inc 10))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.33
 实现 `filtered-accumulate`，说明如何用 `filtered-accumulate` 表达以下内容
@@ -254,7 +270,8 @@ $$
 1. 求出在区间 $a$ 到 $b$ 中所有素数之和（假定你已经写出了谓词 $prime?$ ）
 2. 小于 $n$ 的所有与 $n$ 互素的正整数（即所有满足 $\mathrm{GCD}(i, n) = 1, i < n $ 的整数）之乘积
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (filtered-accumulate filter
                              combiner
                              null-value
@@ -305,7 +322,8 @@ $$
 
 (list (prime-sum 10 15)
       (product-of-relative-prime 10))
-`} />
+```
+</SchemeRunner>
 
 # 使用 lambda 构建过程
 
@@ -315,13 +333,15 @@ $$
 (define (f g) (g 2))
 ```
 那么就有
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (f g) (g 2))
 (define (square x) (* x x))
 
 (list (f square)
       (f (lambda (z) (* z (+ z 1)))))
-`} />
+```
+</SchemeRunner>
 
 那么如果我们要求解释器去求值 `(f f)`，那会发生什么情况？请给出解释。
 
@@ -343,7 +363,8 @@ application: not a procedure;
   * 如果 $f(x) > 0$ ，那么在 $a$ 和 $x$ 之间必然有一个 $f$ 的零点
   * 如果 $f(x) < 0$ ，那么在 $x$ 和 $b$ 之间必然有一个 $f$ 的零点
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (average x y) (/ (+ x y) 2))
 
 (define (search f neg-point pos-point)
@@ -373,7 +394,8 @@ application: not a procedure;
       (half-interval-method (lambda (x) (- (* x x x) (* 2 x) 3))
                             1.0
                             2.0))
-`} />
+```
+</SchemeRunner>
 
 # 实例 找出函数的不动点
 数 $x$ 称为函数 $f$ 的不动点，如果 $x$ 满足方程 $f(x) = x$。对于某些函数，通过从某个初始猜测出发，反复应用 $f$
@@ -400,7 +422,8 @@ $$
 
 做出这种猜测序列的计算过程也就是搜寻 $y \mapsto (1/2)(y + x/y)$ 的不动点。
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define tolerance 0.00001)
 
 (define (average x y) (/ (+ x y) 2))
@@ -421,7 +444,8 @@ $$
 (list (fixed-point cos 1.0)
       (fixed-point (lambda (y) (+ (sin y) (cos y))) 1.0)
       (sqrt 4))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.35
 证明黄金分割率 $\phi$ 是变换 $x \mapsto 1 + 1/x$ 的不动点。请利用这一事实，通过过程 `fixed-point` 计算出 $\phi$ 的值
@@ -434,7 +458,8 @@ $$
 \end{aligned}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define tolerance 0.00001)
 
 (define (average x y) (/ (+ x y) 2))
@@ -450,7 +475,8 @@ $$
   (try first-guess))
 
 (fixed-point (lambda (x) (+ 1 (/ 1 x))) 1.0)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.36
 修改 `fixed-point` ， 使它能打印出计算中产生的近似值序列。
@@ -459,7 +485,8 @@ $$
 
 比较采用平均阻尼和不采用平均组尼时的计算步数
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define tolerance 0.00001)
 
 (define (average x y) (/ (+ x y) 2))
@@ -482,7 +509,8 @@ $$
 ; 使用平均阻尼
 (newline)
 (fixed-point (lambda (y) (average y (/ (log 1000) (log y)))) 1.5)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.37
 一个无穷连分式是一个形如以下形式的表达式
@@ -493,7 +521,8 @@ $$
 在所有的 $N_i$ 和 $D_i$ 都等于 1 时，这一无穷连分式产生出 $1 / \phi$，其中的 $\phi$ 就是黄金分割率。
 
 递归形式
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (cont-frac n d k)
   (define (inner i)
     (if (= i k)
@@ -502,10 +531,12 @@ $$
   (inner 1))
 
 (cont-frac (lambda (i) 1.0) (lambda (i) 1.0) 100)
-`} />
+```
+</SchemeRunner>
 
 迭代形式
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (cont-frac n d k)
   (define (iter prev i)
     (if (= i 0)
@@ -514,14 +545,16 @@ $$
   (iter 0 k))
 
 (cont-frac (lambda (i) 1.0) (lambda (i) 1.0) 100)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.38
 欧拉提出了一个 $e - 2$ 的连分展开式
 
 在这一分式中， $N_i$ 全部都是 1，而 $D_i$ 依次为 $1, 2, 1, 1, 4, 6, 1, 1, 8, \dots$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (cont-frac n d k)
   (define (iter prev i)
     (if (= i 0)
@@ -539,7 +572,8 @@ $$
    n))
 
 (+ (euler 100) 2)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.39
 正切函数的连分式为
@@ -550,7 +584,8 @@ $$
 
 其中 $x$ 用弧度表示
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (cont-frac n d k)
   (define (iter prev i)
     (if (= i 0)
@@ -567,7 +602,8 @@ $$
    k))
 
 (tan-cf 3.1415926535 10000)
-`} />
+```
+</SchemeRunner>
 
 # 过程作为返回值
 
@@ -581,7 +617,8 @@ $$
 
 的不动点
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define tolerance 0.00001)
 
 (define (average x y) (/ (+ x y) 2))
@@ -604,7 +641,8 @@ $$
                1.0))
 
 (sqrt 16)
-`} />
+```
+</SchemeRunner>
 
 ## 实例 牛顿法的一般情况
 
@@ -620,7 +658,8 @@ $$
 Dg(x) = \frac{g(x + \mathrm{d}x) - g(x)}{\mathrm{d}x}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (square x) (* x x))
 
 (define tolerance 0.00001)
@@ -656,10 +695,12 @@ $$
                   1.0))
 
 (sqrt 16)
-`} />
+```
+</SchemeRunner>
 
 ## 抽象和第一级过程
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 ; fixed-point
 (define tolerance 0.00001)
 
@@ -712,12 +753,14 @@ $$
 
 (list (sqrt1 16)
       (sqrt2 16))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.40
 定义 `cubic`，使用牛顿法逼近三次方程 $x^3 + ax^2 + bx + c$ 的零点
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 ; fixed-point
 (define tolerance 0.00001)
 
@@ -754,13 +797,15 @@ $$
     (+ (* x x x) (* a x x) (* b x) c)))
 
 (newtons-method (cubic 1 1 1) 1)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.41
 
 `double`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (inc x) (+ x 1))
 
 (define (double f)
@@ -768,13 +813,15 @@ $$
     (f (f x))))
 
 (((double (double double)) inc) 5)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.42
 
 `compose`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (suqare x) (* x x))
 (define (inc x) (+ x 1))
 
@@ -782,13 +829,15 @@ $$
   (lambda (x) (f (g x))))
 
 ((compose square inc) 6)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.43
 
 `repeated`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (square x) (* x x))
 (define (repeated f count)
   (define (iter counter inner-result)
@@ -798,7 +847,8 @@ $$
   (lambda (x) (iter count x)))
 
 ((repeated square 2) 5)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.44
 

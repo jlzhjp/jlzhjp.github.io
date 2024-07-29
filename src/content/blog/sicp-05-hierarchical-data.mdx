@@ -4,30 +4,35 @@ description: "对应：SICP 2.2 层次性数据和闭包性质"
 pubDate: "Jul 24 2024"
 ---
 
-import SchemeCode from "../../components/SchemeCode.tsx"
+import SchemeRunner from "../../components/SchemeRunner.tsx"
 import Todo from "../../components/Todo.astro"
 
 # 表操作
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (list-ref items n)
   (if (= n 0)
       (car items)
       (list-ref (cdr items) (- n 1))))
 
 (list-ref '(1 2 3) 1)
-`} />
+```
+</SchemeRunner>
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (length items)
   (if (null? items)
       0
       (+ 1 (length (cdr items)))))
 
 (length '(1 2 3))
-`} />
+```
+</SchemeRunner>
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (length items)
   (define (length-iter a count)
     (if (null? a)
@@ -36,35 +41,41 @@ import Todo from "../../components/Todo.astro"
   (length-iter items 0))
 
 (length '(1 2 3))
-`} />
+```
+</SchemeRunner>
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (append list1 list2)
   (if (null? list1)
       list2
       (cons (car list1) (append (cdr list1) list2))))
 
 (append '(1 2 3) '(4 5 6))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.17
 
 定义 `last-pair`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (last-pair l)
   (if (null? (cdr l))
       l
       (last-pair (cdr l))))
 
 (last-pair '(1 2 3))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.18
 
 定义 `reverse`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (reverse items)
   (define (iter xs ys)
     (if (null? xs)
@@ -73,13 +84,15 @@ import Todo from "../../components/Todo.astro"
   (iter items '()))
 
 (reverse '(1 2 3))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.19
 
 换零钱
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define us-coins (list 50 25 10 5 1))
 (define uk-coins (list 100 50 20 10 5 2 1))
 
@@ -97,7 +110,8 @@ import Todo from "../../components/Todo.astro"
             (cc (- amount (first-denomination coin-values)) coin-values))]))
 
 (cc 100 us-coins)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.20
 
@@ -105,7 +119,8 @@ import Todo from "../../components/Todo.astro"
 
 采用这种记法写出过程 `same-parity` ，它以一个或多个整数为参数，返回所有与其第一个参数有着相同奇偶性的参数形成的表。
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (same-parity . items)
   (let ([parity (remainder (car items) 2)])
     (define (helper xs)
@@ -117,13 +132,15 @@ import Todo from "../../components/Todo.astro"
 
 (list (same-parity 1 2 3 4 5)
       (same-parity 2 3 4 5 6))
-`} />
+```
+</SchemeRunner>
 
 # 对表的映射
 
 ## `scale-list`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (scale-list items factor)
   (if (null? items)
       '()
@@ -131,11 +148,13 @@ import Todo from "../../components/Todo.astro"
             (scale-list (cdr items) factor))))
 
 (scale-list '(1 2 3 4 5) 10)
-`} />
+```
+</SchemeRunner>
 
 ## `map`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (map proc items)
   (if (null? items)
       '()
@@ -147,26 +166,32 @@ import Todo from "../../components/Todo.astro"
        items))
 
 (scale-list '(1 2 3 4 5) 10)
-`} />
+```
+</SchemeRunner>
 
 ## 更具有一般性的 `map` 过程
 Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参数，将这个过程应用于所有表的第一个元素，而后应用它们的第二个元素，如此下去，返回所有结果的表，例如：
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (map + (list 1 2 3) (list 40 50 60) (list 700 800 900))
-`} />
+```
+</SchemeRunner>
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (map (lambda (x y) (+ x (* 2 y)))
   (list 1 2 3)
   (list 4 5 6))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.21
 
 `square-list` 的实现
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (square-list items)
   (define (square x) (* x x))
   (if (null? items)
@@ -178,13 +203,15 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
   (map square items))
 
 (square-list '(1 2 3 4))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.22
 
 `square-list` 的迭代实现
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (square-list items)
   (define (square x) (* x x))
   (define (iter things answer)
@@ -196,7 +223,8 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
   (iter items '()))
 
 (square-list '(1 2 3 4))
-`} />
+```
+</SchemeRunner>
 
 ```scheme
 (iter '(1 2 3) '())
@@ -205,7 +233,8 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 (iter '() '(9 4 1))
 ```
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (square-list items)
   (define (square x) (* x x))
   (define (iter things answer)
@@ -217,12 +246,14 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
   (iter items '()))
 
 (square-list '(1 2 3 4))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.23
 
 `for-each` 的实现
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (for-each f items)
   (if (null? (cdr items))
       (f (car items))
@@ -232,7 +263,8 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 (for-each
   (lambda (x) (display x) (display ", "))
   '(1 2 3))
-`} />
+```
+</SchemeRunner>
 
 # 层次性结构
 
@@ -242,54 +274,67 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 2. 对于树 `x` 的 `count-leaves` 应该是 `(count-leaves (car x))` 和 `(count-leaves (cdr x))` 的和
 3. 一个树叶的 `count-leaves` 是 1
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (count-leaves x)
   (cond [(null? x) 0]
         [(pair? x) (+ (count-leaves (car x)) (count-leaves (cdr x)))]
         [else 1]))
 
 (count-leaves (list 1 (list 2 (list 3 4))))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.24
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (list 1 (list 2 (list 3 4)))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.25
 
 给出能从下面各表中取出 7 的 `car` 和 `cdr` 的组合
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define a '(1 3 (5 7) 9))
 (car (cdr (car (cdr (cdr a)))))
-`} />
+```
+</SchemeRunner>
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define b '((7)))
 (car (car b))
-`} />
+```
+</SchemeRunner>
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define c '(1 (2 (3 (4 (5 (6 7)))))))
 (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr c))))))))))))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.26
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define x (list 1 2 3))
 (define y (list 4 5 6))
 
 (list (append x y)
       (cons x y)
       (list x y))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.27
 `deep-reverse`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (reverse items)
   (define (iter xs ys)
     (if (null? xs)
@@ -311,13 +356,15 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 
 (list (reverse x)
       (deep-reverse x))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.28
 
 `fringe`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (fringe x)
   (cond [(null? x) '()]
         [(pair? x) (append (fringe (car x)) (fringe (cdr x)))]
@@ -326,13 +373,15 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 (define x (list (list 1 2) (list 3 4)))
 
 (fringe x)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.29
 
 二叉活动体
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-mobile left right)
   (list left right))
 
@@ -376,7 +425,8 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 
 (list (is-balanced mobile-x)
       (is-balanced mobile-balanced))
-`} />
+```
+</SchemeRunner>
 
 ## 对树的映射
 

@@ -4,6 +4,28 @@ import classes from "./SchemeRunner.module.css"
 
 const { TopEnv } = BiwaScheme
 
+const shim = `
+  (define nil '())
+  (define true #t)
+  (define false #f)
+  (define (random n)
+    (random-integer n))
+
+  ; https://github.com/biwascheme/biwascheme/issues/110#issuecomment-335869546
+  (define (date2runtime date)
+    ; HACK
+    ; wraps around occasionally!
+    (+
+       (* (date-hour date) 60 60 1000)
+       (* (date-minute date) 60 1000)
+       (* (date-second date) 1000)
+       (date-millisecond date)
+    )
+  )
+
+  (define (runtime) (date2runtime (current-date)))
+`
+
 type SchemeEvalutionResultProps = {
   code: string
 }
@@ -17,6 +39,10 @@ function SchemeEvaluationResult({ code }: SchemeEvalutionResultProps) {
   }
 
   useEffect(() => {
+    for (const prop in TopEnv) {
+      delete TopEnv[prop]
+    }
+
     BiwaScheme.define_libfunc("display", 1, 1, (args: any) => {
       setCodeOutput(
         (x) =>
@@ -36,6 +62,8 @@ function SchemeEvaluationResult({ code }: SchemeEvalutionResultProps) {
         ),
       )
     })
+
+    interpreter.evaluate(shim)
 
     interpreter.evaluate(code, (result: any) => {
       if (result) {
@@ -71,7 +99,7 @@ export default function SchemeRunner({ children }: SchemeRunnerProps) {
 
   return (
     <div className="flex flex-col">
-      <div className="blog-border-pixel py-1 px-2 relative overflow-x-auto overflow-y-hidden leading-none">
+      <div className="blog-border-pixel relative overflow-x-auto overflow-y-hidden leading-none">
         <div className={classes.astroCodeContainer} ref={codeElementRef}>
           {children}
         </div>

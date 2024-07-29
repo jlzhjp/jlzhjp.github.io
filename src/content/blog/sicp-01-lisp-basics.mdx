@@ -4,7 +4,7 @@ description: "对应：SICP 1.1 程序设计的基本元素"
 pubDate: "Jul 24 2024"
 ---
 
-import SchemeCode from "../../components/SchemeCode.tsx"
+import SchemeRunner from "../../components/SchemeRunner.tsx"
 import Todo from "../../components/Todo.astro"
 
 # 程序设计的基本元素
@@ -22,7 +22,8 @@ import Todo from "../../components/Todo.astro"
 - 抽象的方法：通过它们可以为复合对象命名，并将它们当作单元去操作
 
 ## 练习 1.1
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define a 3)
 (define b (+ a 1))
 
@@ -42,7 +43,8 @@ import Todo from "../../components/Todo.astro"
                [(< a b) b]
                [else -1])
          (+ a 1)))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.2
 
@@ -54,32 +56,38 @@ $$
   {3 \left (6 - 2 \right) \left(2 - 7 \right)}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (/ (+ 5 4 (- 2 (- 3 (+ 6 (/ 4 5)))))
    (* 3 (- 6 2) (- 2 7)))
-`}/>
+```
+</SchemeRunner>
 
 ## 练习 1.3
 
 定义一个过程，它以三个数作为参数，返回这较大的两个数之和
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (sum-of-max-two a b c)
   (if (>= a b)
       (if (>= b c) (+ a b) (+ a c))
       (if (> a c) (+ b a) (+ b c))))
 
 (sum-of-max-two 1 2 3)
-`}/>
+```
+</SchemeRunner>
 
 ## 练习 1.4
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (a-plus-abs-b a b)
   ((if (> b 0) + -) a b))
 
 (list (a-plus-abs-b 1 1)
       (a-plus-abs-b 1 -1))
-`}/>
+```
+</SchemeRunner>
 
 这一过程中根据参数 `b` 的值来确定对参数 `a` `b` 应用的过程，如果 $b > 0$，则应用 `+` 过程；若 $b < 0$，则应用 `-` 过程。
 
@@ -162,7 +170,8 @@ To evaluate an IF expression
 # 实例 牛顿法求平方根
 如果对 $x$ 的平方根的值有了一个猜测 $y$，那么就可以得到一个更好的猜测： $\frac{y + x/y}{2}$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (sqrt-iter guess x)
   (if (good-enough? guess x)
       guess
@@ -184,7 +193,8 @@ To evaluate an IF expression
   (sqrt-iter 1.0 x))
 
 (sqrt 9)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 1.6
 ```scheme
@@ -207,7 +217,8 @@ $$
   \frac{x/y^2 + 2y}{3}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (cube-root-iter guess x)
   (if (good-enough? guess x)
       guess
@@ -228,7 +239,8 @@ $$
 (define (cube-root x) (cube-root-iter 1.0 x))
 
 (cube-root 27)
-`} />
+```
+</SchemeRunner>
 
 # 过程作为黑箱抽象
 ## 局部名
@@ -243,7 +255,8 @@ Scheme 允许我们定义内部函数，这中嵌套的定义称为 **块结构*
 
 **词法作用域**：词法作用域要求过程中的自由变量实际引用外围过程定义中所出现的约束变量。
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (sqrt x)
   (define (square x) (* x x))
   (define (average x y) (/ (+ x y) 2))
@@ -258,4 +271,5 @@ Scheme 允许我们定义内部函数，这中嵌套的定义称为 **块结构*
   (sqrt-iter 1.0 x))
 
 (sqrt 9)
-`} />
+```
+</SchemeRunner>

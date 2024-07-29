@@ -4,13 +4,14 @@ description: "对应：SICP 2.3 符号数据"
 pubDate: "Jul 25 2024"
 ---
 
-import SchemeCode from "../../components/SchemeCode.tsx"
+import SchemeRunner from "../../components/SchemeRunner.tsx"
 import Todo from "../../components/Todo.astro"
 
 # 符号数据基础
 ## `memq` 的实现
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (memq item x)
   (cond [(null? x) #f]
         [(eq? item (car x)) x]
@@ -18,13 +19,15 @@ import Todo from "../../components/Todo.astro"
 
 (list (memq 'apple '(pear banana prune))
       (memq 'apple '(x (apple sauce) y apple pear)))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.53
 
 解释器在求值下面各表达式时将打印出什么
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (display (list 'a 'b 'c)) (newline)
 (display (list (list 'george))) (newline)
 (display (cdr '((x1 x2) (y1 y2)))) (newline)
@@ -32,13 +35,15 @@ import Todo from "../../components/Todo.astro"
 (display (pair? (car '(a short list)))) (newline)
 (display (memq 'red '((red shoes) (blue socks)))) (newline)
 (display (memq 'red '(red shoes blue socks))) (newline)
-`}/>
+```
+</SchemeRunner>
 
 ## 练习 2.54
 
 `equal?` 的定义
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (equals? x y)
   (cond [(and (pair? x) (pair? y))
          (and (equals? (car x) (car y))
@@ -47,15 +52,18 @@ import Todo from "../../components/Todo.astro"
 
 (list (equals? '(this is a list) '(this is a list))
       (equals? '(this is a list) '(this (is a) list)))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.54
 
 `(car ''abracadabra)` 的输出为 `quote`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (car ''abracadabra)
-`} />
+```
+</SchemeRunner>
 
 ```scheme
 (car ''abracadabra)
@@ -77,7 +85,8 @@ $$
 \end{aligned}
 $$
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 ; 变量 => 符号
 (define (variable? x) (symbol? x))
 
@@ -140,13 +149,15 @@ $$
 (list (deriv '(+ x 3) 'x)
       (deriv '(* x y) 'x)
       (deriv '(* (* x y) (+ x 3)) 'x))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.56
 
 扩充指数的求导规则
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (variable? x) (symbol? x))
 (define (same-variable? v1 v2) (and (variable? v1) (variable? v2) (eq? v1 v2)))
 (define (=number? exp num)
@@ -204,7 +215,8 @@ $$
          (error "unknown expression type -- DERIV" exp)]))
 
 (deriv '(** (- x 1) 2) 'x)
-`} />
+```
+</SchemeRunner>
 
 
 ## 练习 2.57
@@ -213,7 +225,8 @@ $$
 
 > Hint: 只修改和与乘积的表示，而完全不修改过程 `deriv` 的方式完成这一扩充
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (variable? x) (symbol? x))
 (define (same-variable? v1 v2)
   (and (variable? v1) (variable? v2) (eq? v1 v2)))
@@ -271,12 +284,14 @@ $$
 
 (list (deriv '(+ x x x) 'x)
       (deriv '(* x x x) 'x))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.58
 (a)
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (variable? x) (symbol? x))
 (define (same-variable? v1 v2)
   (and (variable? v1) (variable? v2) (eq? v1 v2)))
@@ -327,7 +342,8 @@ $$
 (list (deriv '(x + 3) 'x)
       (deriv '(x * y) 'x)
       (deriv '((x * y) * (x + 3)) 'x))
-`} />
+```
+</SchemeRunner>
 
 (b)
 <Todo />
@@ -339,7 +355,8 @@ $$
 ## 练习 2.59
 为采用未排序表的集合实现定义 `union-set` 操作
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (union-set set1 set2)
   (cond [(null? set1) set2]
         [(element-of-set? (car set1) set2)
@@ -347,10 +364,12 @@ $$
         [else (cons (car set1) (union-set (cdr set1) set2))]))
 
 (union-set '(1 2 3) '(3 4 5))
-`} />
+```
+</SchemeRunner>
 
 使用 `accumulate` 的实现
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (adjoin-set x set)
   (if (element-of-set? x set)
       set
@@ -366,7 +385,8 @@ $$
   (accumulate adjoin-set set2 set1))
 
 (union-set '(1 2 3) '(3 4 5))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.60
 ```scheme
@@ -387,7 +407,8 @@ $$
 
 `element-of-set?`
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (element-of-set? x set)
   (cond [(null? set) #f]
         [(= x (car set)) #t]
@@ -397,7 +418,8 @@ $$
 
 (list (element-of-set? 2 '(1 2 3))
       (element-of-set? 4 '(1 2 3)))
-`} />
+```
+</SchemeRunner>
 
 `intersection-set`
 
@@ -406,7 +428,8 @@ $$
   - `(< x1 x2)` => 由于 `x2` 是集合 `set2` 的最小元素，立即可以断定 `x1` 不会出现在集合的任何地方，它不应该在交集中，两集合的交集为 `(set2)` 与 `(cdr set1)` 的交集
   - `(< x2 x1)` => 集合 `set1` 与 `(cdr set2)` 的交集
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (intersection-set set1 set2)
   (if (or (null? set1) (null? set2))
       '()
@@ -421,13 +444,15 @@ $$
                (intersection-set set1 (cdr set2))]))))
 
 (intersection-set '(1 2 3 4 5) '(3 4 5 6 7 8))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.61
 
 给出排序表示时 `adjoin-set` 的实现。
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (adjoin-set x set)
   (cond [(null? set) (cons x '())]
         [(< x (car set)) (cons x set)]
@@ -435,13 +460,15 @@ $$
         [(> x (car set)) (cons (car set) (adjoin-set x (cdr set)))]))
 
 (adjoin-set 3 '(0 1 2 4 5 6))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.62
 
 给出在集合的排序表示上 `union-set` 的一个 $\Theta(n)$ 实现
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (union-set set1 set2)
   (cond [(null? set1) set2]
         [(null? set2) set1]
@@ -452,11 +479,13 @@ $$
                  [(> x1 x2) (cons x2 (union-set set1 (cdr set2)))]))]))
 
 (union-set '(1 2 3 4 5 6) '(1 3 5 7 9))
-`} />
+```
+</SchemeRunner>
 
 ## 集合作为二叉树
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (entry tree) (car tree))
 
 (define (left-branch tree) (cadr tree))
@@ -489,11 +518,13 @@ $$
 (define set '())
 
 (adjoin-set 2 (adjoin-set 3 (adjoin-set 1 set)))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.63
 (a)
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (entry tree) (car tree))
 
 (define (left-branch tree) (cadr tree))
@@ -567,7 +598,8 @@ $$
       (list (tree->list-2 tree1)
             (tree->list-2 tree2)
             (tree->list-2 tree3)))
-`} />
+```
+</SchemeRunner>
 
 (b)
 <Todo />
@@ -576,7 +608,8 @@ $$
 
 通过有序链表构建平衡二叉树
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-tree entry left right) (list entry left right))
 
 (define (entry tree) (car tree))
@@ -604,7 +637,8 @@ $$
               remaining-elts))))
 
 (list->tree '(1 3 5 7 9 11))
-`} />
+```
+</SchemeRunner>
 
 这种通过返回剩余元素来使用递归处理单链表的方法确实令人耳目一新！
 
@@ -620,7 +654,8 @@ partial_tree('(7 8 11))
 ## 练习 2.65
 利用练习 2.63 和 练习 2.64 的结果，给出对采用（平衡）二叉树方式实现的集合的 `union-set` 和 `intersection-set` 操作的 $\Theta (n)$ 实现
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-tree entry left right) (list entry left right))
 
 (define (entry tree) (car tree))
@@ -687,10 +722,12 @@ partial_tree('(7 8 11))
 
 (list (union-tree-set (list->tree '(1 2 3 4)) (list->tree '(3 4 5 6 7)))
       (intersection-tree-set (list->tree '(1 2 3 4)) (list->tree '(3 4 5 6 7))))
-`} />
+```
+</SchemeRunner>
 
 ## 集合与信息检索
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-record key name) (cons key name))
 (define (key record) (car record))
 (define (name record) (cdr record))
@@ -739,7 +776,8 @@ partial_tree('(7 8 11))
 (define records-tree (list->tree records))
 
 (lookup 6 records-tree)
-`} />
+```
+</SchemeRunner>
 
 # 实例 Huffman 编码树
 
@@ -747,7 +785,8 @@ partial_tree('(7 8 11))
 
 消息的解码
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-leaf symbol weight)
   (list 'leaf symbol weight))
 
@@ -805,13 +844,15 @@ partial_tree('(7 8 11))
 (define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
 
 (decode sample-message sample-tree)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.68
 
 消息的编码
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-leaf symbol weight)
   (list 'leaf symbol weight))
 
@@ -861,12 +902,14 @@ partial_tree('(7 8 11))
               (encode (cdr message) tree))))
 
 (encode '(A D A B B C A) sample-tree)
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.69
 生成 Huffman 编码树
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-leaf symbol weight)
   (list 'leaf symbol weight))
 
@@ -921,13 +964,15 @@ partial_tree('(7 8 11))
   (successive-merge (make-leaf-set pairs)))
 
 (generate-huffman-tree '((A 4) (B 2) (C 1) (D 1)))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.70
 
 对歌词进行编码
 
-<SchemeCode client:load code={`
+<SchemeRunner client:load>
+```scheme
 (define (make-leaf symbol weight)
   (list 'leaf symbol weight))
 
@@ -1037,7 +1082,8 @@ partial_tree('(7 8 11))
 
 (display "Decoded: ")
 (display (decode encoded-song song-huffman-tree))
-`} />
+```
+</SchemeRunner>
 
 ## 练习 2.71
 
