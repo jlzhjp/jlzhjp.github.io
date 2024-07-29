@@ -1,0 +1,5 @@
+.astroCodeContainer :global(.astro-code) {
+  border: none;
+  padding: 0;
+  margin: 0;
+}

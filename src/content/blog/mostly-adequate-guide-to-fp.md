@@ -159,7 +159,33 @@ We can constrain types to an interface
 // assertEqual :: (Eq a, Show a) => a -> a -> Assertion
 ```
 
-# Container
+# Functor
+
+```javascript
+// (a -> b) -> Container a -> Container b
+Container.prototype.map = function (f) {
+  return Container.of(f(this.$value))
+}
+```
+
+```javascript
+Container.of(2).map((two) => two + 2)
+// Container(4)
+
+Container.of("flamethrowers").map((s) => s.toUpperCase())
+// Container('FLAMETHROWERS')
+
+Container.of("bombs").map(append(" away")).map(prop("length"))
+// Container(10)
+```
+
+> A Functor is a type that implements `map` and obeys some laws.
+
+What do we gain from asking our container to apply functions for us?
+
+- Abstraction of function application. When we `map` a function, we ask the container type to run it for us.
+
+## Container
 
 ```javascript
 class Container {
@@ -188,33 +214,7 @@ Container.of(Container.of({ name: "yoda" }))
 - The `$value` cannot be some specific type or our `Container` would be hardly live up to the name
 - Once data goes into the `Container` it stays there. We _could_ get it out by using `.value`, but that would defeat the purpose.
 
-# Functor
-
-```javascript
-// (a -> b) -> Container a -> Container b
-Container.prototype.map = function (f) {
-  return Container.of(f(this.$value))
-}
-```
-
-```javascript
-Container.of(2).map((two) => two + 2)
-// Container(4)
-
-Container.of("flamethrowers").map((s) => s.toUpperCase())
-// Container('FLAMETHROWERS')
-
-Container.of("bombs").map(append(" away")).map(prop("length"))
-// Container(10)
-```
-
-> A Functor is a type that implements `map` and obeys some laws.
-
-What do we gain from asking our container to apply functions for us?
-
-- Abstraction of function application. When we `map` a function, we ask the container type to run it for us.
-
-# Maybe
+## Maybe
 
 ```javascript
 class Maybe {
@@ -242,7 +242,7 @@ class Maybe {
 
 Maybe will first check to see if it has a value before calling the supplied function. This has the effect of side stepping those pesky nulls as we `map`.
 
-## Use Case
+### Use Case
 
 ```haskell
 withdraw :: (Ord a, Num a) => a -> a -> Maybe a
@@ -266,7 +266,7 @@ main = do
     print $ getTwenty 10 -- Nothing
 ```
 
-## Release the value
+### Release the value
 
 ```javascript
 // maybe :: b -> (a -> b) -> Maybe a -> b
@@ -297,7 +297,7 @@ main = do
     print $ fromMaybe "You're broke" $ getTwenty 10
 ```
 
-# Either (Error handling)
+## Either (Error handling)
 
 ```javascript
 class Either {
@@ -400,7 +400,7 @@ zoltar({ birthDate: "balloons!" })
 // undefined
 ```
 
-# IO
+## IO
 
 ```javascript
 class IO {
@@ -443,4 +443,8 @@ $("#myDiv")
 
 > `IO` delays the impure action by capturing it in a function wrapper. As such, we think of `IO` as containing the return value of the wrapped action and not the wrapper itself.
 
-# Asynchronous Tasks
+## Asynchronous Tasks
+
+## A Spot of Theory
+
+# Monad

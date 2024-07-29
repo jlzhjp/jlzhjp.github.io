@@ -221,13 +221,11 @@ a:hover::after {
 
 .md-body ol {
   list-style-type: decimal;
-  list-style-position: inside;
   margin-left: 1em;
 }
 
 .md-body ul {
   image-rendering: pixelated;
-  list-style-position: inside;
   margin-left: 1em;
   list-style-image: url(/bullet-1-light.webp);
 }

@@ -1,0 +1,37 @@
+---
+title: "SICP - 10 - 求值的环境模型"
+description: "对应：SICP 3.2 求值的环境模型"
+pubDate: "Jul 28 2024"
+---
+
+# Concepts
+import Todo from "../../components/Todo.astro"
+
+- Environment: "places" in which values can be stored
+- Frames: A table (possibly empty) of bindings, which associate variable names with their corresponding values
+- Procedure: a pair consisting of some code and a pointer to an environment
+  - Procedures are created in one way only: by evaluating an $\lambda$-expression
+  - **Code** is obtained from the text of the $\lambda$-expression
+  - **Environment** is the environment in which the $\lambda$-expression was evaluated to produce the procedure
+
+# The Rules for Evaluation
+
+- Rule 1: A procedure object is applied to a set of arguments by constructing a frame, binding the formal parameters of the call, and then evaluating the body of the procedure in the context of the new environment constructed.
+The new frame has as its enclosing environment the environment part of the procedure object being applied.
+- Rule 2: A lambda-expression is evaluated relative to a given environment as follows:a new procedure object is formed. combining the text (code) of the lambda-expression with a pointer to the environment of evaluation.
+
+# Actions and Identity
+- We say that an action. A. had an effect on a object, X, (or equivalently, that X was changed by A) if some property, P. which was true of X before A because false of X after A
+- We say that two objects. X and Y, are the same if any action which has an effect on X has the same effect on Y
+
+# 练习 3.9
+递归
+<Todo />
+
+# 练习 3.10
+局部状态变量
+<Todo />
+
+# 练习 3.11
+内部定义
+<Todo />

@@ -1,0 +1,27 @@
+---
+title: "SICP - 7 - 抽象数据的多重表示"
+description: "对应：SICP 2.4 抽象数据的多重表示"
+pubDate: "Jul 26 2024"
+---
+# 复数运算系统
+
+## 复数运算规则
+
+$$
+\def\RealPart{\operatorname{Real-part}}
+\def\ImaginaryPart{\operatorname{Imaginary-part}}
+\def\Magnitude{\operatorname{Magnitude}}
+\def\Angle{\operatorname{Angle}}
+
+\begin{aligned}
+
+\RealPart(z_1 + z_2) &= \RealPart(z_1) + \RealPart(z_2) \\
+\ImaginaryPart(z_1 + z_2) &= \ImaginaryPart(z_1) + \ImaginaryPart(z_2) \\
+
+\Magnitude(z_1 \cdot z_2) &= \Magnitude(z_1) \cdot \Magnitude(z_2) \\
+\Angle(z_1 \cdot z_2) &= \Angle(z_1) + \Angle(z_2)
+
+\end{aligned}
+$$
+
+## 带标志数据

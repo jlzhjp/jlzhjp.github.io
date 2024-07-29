@@ -1,0 +1,492 @@
+---
+title: "SICP - 11 - 变动数据结构"
+description: "对应：SICP 3.3.1 - 3.3.3"
+pubDate: "Jul 29 2024"
+---
+
+import SchemeCode from "../../components/SchemeCode.tsx"
+import SchemeRunner from "../../components/SchemeRunner.tsx"
+import Todo from "../../components/Todo.astro"
+
+# 变动的表结构
+## 练习 3.12
+
+`append!`
+
+<SchemeCode client:load code={`
+(define (last-pair x)
+  (if (null? (cdr x))
+      x
+      (last-pair (cdr x))))
+
+(define (append! x y)
+  (set-cdr! (last-pair x) y)
+  x)
+
+(define x (list 'a 'b))
+(define y (list 'c 'd))
+(define z (append x y))
+(display (cdr x))
+(define w (append! x y))
+(display (cdr x))
+`} />
+
+## 练习 3.13
+`make-cycle`
+
+```scheme
+(define (last-pair x)
+  (if (null? (cdr x))
+      x
+      (last-pair (cdr x))))
+
+(define (make-cycle x)
+  (set-cdr! (last-pair x) x)
+  x)
+
+(define z (make-cycle (list 'a 'b 'c)))
+z
+```
+
+## 练习 3.14
+<SchemeCode client:load code={`
+(define (mystery x)
+  (define (loop x y)
+    (if (null? x)
+        y
+        (let ([temp (cdr x)])
+          (set-cdr! x y)
+          (loop temp x)))) ; x = temp, y = x
+  (loop x '()))
+
+(define v (list 'a 'b 'c))
+(define w (mystery v))
+
+(display v) (newline)
+(display w)
+`} />
+
+作用：原地反转一个链表，每次循环把 `x` 的第一个元素摘下来放到 `y` 的末尾
+
+## 练习 3.15
+<SchemeCode client:load code={`
+(define (set-to-wow! x)
+  (set-car! (car x) 'wow)
+  x)
+
+(define x (list 'a 'b))
+(define z1 (cons x x))
+
+(define z2 (cons (list 'a 'b) (list 'a 'b)))
+
+(display (set-to-wow! z1)) (newline)
+(display (set-to-wow! z2))
+`} />
+
+## 练习 3.16
+<SchemeCode client:load code={`
+(define (count-pairs x)
+  (if (not (pair? x))
+      0
+      (+ (count-pairs (car x))
+         (count-pairs (cdr x))
+         1)))
+
+(display (count-pairs (cons '() (cons '() (cons '() '()))))) (newline)
+
+(define y (cons '() '()))
+(define z (cons y (cons y '())))
+
+(display (count-pairs z)) (newline)
+
+(define a (cons '() '()))
+(define b (cons a a))
+(define c (cons b b))
+(display (count-pairs c))
+
+; 有环的情况下不返回
+`} />
+
+## 练习 3.17
+<SchemeCode client:load code={`
+(define (count-pairs x)
+  (define visited '())
+  (define (inner node)
+    (if (or (memq node visited)
+            (not (pair? node)))
+        0
+        (begin
+          (set! visited (cons node visited))
+          (+ (inner (car node))
+             (inner (cdr node))
+             1))))
+  (inner x))
+
+(display (count-pairs (cons '() (cons '() (cons '() '()))))) (newline)
+
+(define y (cons '() '()))
+(define z (cons y (cons y '())))
+
+(display (count-pairs z)) (newline)
+
+(define a (cons '() '()))
+(define b (cons a a))
+(define c (cons b b))
+
+(display (count-pairs c)) (newline)
+
+(define cycle-list (cons '() (cons '() (cons '() '()))))
+(set-cdr! (cddr cycle-list) cycle-list)
+(display (count-pairs cycle-list))
+`} />
+
+## 练习 3.18
+检查链表是否有环
+<SchemeCode client:load code={`
+(define (check-cycle x)
+  (define visited '())
+  (define (check-cycle-inner node)
+    (cond [(memq node visited) #t]
+          [(not (pair? node)) #f]
+          [else (begin (set! visited (cons node visited))
+                       (check-cycle-inner (cdr node)))]))
+  (check-cycle-inner x))
+
+(display (check-cycle (cons '() (cons '() (cons '() '()))))) (newline)
+
+(define y (cons '() '()))
+(define z (cons y (cons y '())))
+
+(display (check-cycle z)) (newline)
+
+(define a (cons '() '()))
+(define b (cons a a))
+(define c (cons b b))
+
+(display (check-cycle c)) (newline)
+
+(define cycle-list (cons '() (cons '() (cons '() '()))))
+(set-cdr! (cddr cycle-list) cycle-list)
+(display (check-cycle cycle-list))
+`} />
+
+## 练习 3.19
+不使用额外空间判断链表是否有环
+<SchemeCode client:load code={`
+(define (check-cycle x)
+  (define (check-cycle-inner x1 x2)
+    (cond [(eq? x1 x2) #t]
+          [(or (null? x2) (null? (cdr x2))) #f]
+          [else (check-cycle-inner (cdr x1) (cddr x2))]))
+  (cond [(or (null? x) (null? (cdr x))) #f]
+        [else (check-cycle-inner (cdr x) (cddr x))]))
+
+(display (check-cycle (cons '() (cons '() (cons '() '()))))) (newline)
+
+(define y (cons '() '()))
+(define z (cons y (cons y '())))
+
+(display (check-cycle z)) (newline)
+
+(define a (cons '() '()))
+(define b (cons a a))
+(define c (cons b b))
+
+(display (check-cycle c)) (newline)
+
+(define cycle-list (cons '() (cons '() (cons '() '()))))
+(set-cdr! (cddr cycle-list) cycle-list)
+(display (check-cycle cycle-list))
+`} />
+
+## 使用局部数状态和赋值实现数据对象的改变
+
+Assignment is all that is needed, theoretically, to account for the behavior
+of mutable data. As soon as we admit set! to our language, we raise
+all the issues, not only of assignment, but of mutable data in general.
+
+On the other hand, from the viewpoint of implementation, assignment requires us
+to modify the environment, which is itself a mutable data structure. Thus, assignment
+and mutation are equipotent: Each can be implemented in terms of the other.
+
+## 练习 3.20
+画出显示下面一系列表达式的求值过程的环境图示：
+<SchemeCode client:load code={`
+(define (cons x y)
+  (define (set-x! v) (set! x v))
+  (define (set-y! v) (set! y v))
+  (define (dispatch m)
+    (cond [(eq? m 'car) x]
+          [(eq? m 'cdr) y]
+          [(eq? m 'set-car!) set-x!]
+          [(eq? m 'set-cdr!) set-y!]
+          [else (error "Undefined operation -- CONS" m)]))
+  dispatch)
+
+(define (car z) (z 'car))
+(define (cdr z) (z 'cdr))
+
+(define (set-car! z new-value)
+  ((z 'set-car!) new-value)
+  z)
+
+(define (set-cdr! z new-value)
+  ((z 'set-cdr!) new-value)
+  z)
+
+(define x (cons 1 2))
+(define z (cons x x))
+(set-car! (cdr z) 17)
+(car x)
+`} />
+
+<Todo />
+
+# 队列的表示
+
+## 练习 3.21
+
+`print-queue`
+<SchemeCode client:load code={`
+(define (front-ptr queue) (car queue))
+(define (rear-ptr queue) (cdr queue))
+(define (set-front-ptr! queue item) (set-car! queue item))
+(define (set-rear-ptr! queue item) (set-cdr! queue item))
+(define (empty-queue? queue) (null? (front-ptr queue)))
+(define (make-queue) (cons '() '()))
+
+(define (front-queue queue)
+  (if (empty-queue? queue)
+      (error "FRONT called with an empty queue" queue)
+      (car (front-ptr queue))))
+
+(define (insert-queue! queue item)
+  (let ([new-pair (cons item '())])
+    (cond [(empty-queue? queue)
+           (set-front-ptr! queue new-pair)
+           (set-rear-ptr! queue new-pair)
+           queue]
+          [else
+           (set-cdr! (rear-ptr queue) new-pair)
+           (set-rear-ptr! queue new-pair)
+           queue])))
+
+(define (delete-queue! queue)
+  (cond [(empty-queue? queue)
+         (error "DELETE! called with an empty queue" queue)]
+        [else
+         (set-front-ptr! queue (cdr (front-ptr queue)))
+         queue]))
+
+(define (print-queue queue)
+  (display "(queue ")
+
+  (define (iter n)
+    (if (eq? n (rear-ptr queue))
+        (display (car n))
+        (begin (display (car n))
+               (display " ")
+               (iter (cdr n)))))
+  (if (not (empty-queue? queue))
+      (iter (front-ptr queue)))
+  (display ")"))
+
+(define q1 (make-queue))
+
+(print-queue (insert-queue! q1 'a)) (newline)
+(print-queue (insert-queue! q1 'b)) (newline)
+(print-queue (delete-queue! q1)) (newline)
+(print-queue (delete-queue! q1)) (newline)
+`} />
+
+
+## 练习 3.22
+
+利用局部状态构建队列
+
+<SchemeCode client:load code={`
+(define (make-queue)
+  (let ([front-ptr '()]
+        [rear-ptr '()])
+
+    (define (empty-queue?) (null? front-ptr))
+
+    (define (front-queue)
+      (if (empty-queue?)
+          (error "FRONT called with an empty queue")
+          (car front-ptr)))
+
+    (define (insert-queue! item)
+      (let ([new-pair (cons item '())])
+        (cond [(empty-queue?)
+               (set! front-ptr new-pair)
+               (set! rear-ptr new-pair)]
+              [else
+               (set-cdr! rear-ptr new-pair)
+               (set! rear-ptr new-pair)])))
+
+    (define (delete-queue!)
+      (cond [(empty-queue?)
+             (error "DELETE! called with an empty queue")]
+            [else
+             (set! front-ptr (cdr front-ptr))]))
+
+    (define (traverse-queue body)
+      (define (iter node)
+        (if (not (null? node))
+            (begin (body (car node))
+                   (iter (cdr node)))))
+      (iter front-ptr))
+
+    (define (dispatch m)
+      (case m
+        [(empty-queue?) empty-queue?]
+        [(front-queue) front-queue]
+        [(insert-queue!)
+         (lambda (item)
+           (insert-queue! item)
+           dispatch)]
+        [(delete-queue!)
+         (lambda ()
+           (delete-queue!)
+           dispatch)]
+        [(traverse-queue) traverse-queue]
+        [else (error "Undefined operation -- DISPATCH" m)]))
+
+    dispatch))
+
+(define (empty-queue? dispatch) ((dispatch 'empty-queue?)))
+(define (front-queue dispatch) ((dispatch 'front-queue)))
+(define (traverse-queue dispatch body) ((dispatch 'traverse-queue) body))
+(define (insert-queue! dispatch item) ((dispatch 'insert-queue!) item))
+(define (delete-queue! dispatch) ((dispatch 'delete-queue!)))
+
+(define (print-queue queue)
+  (display "(queue")
+  (traverse-queue
+   queue
+   (lambda (v)
+     (display " ")
+     (display v)))
+  (display ")"))
+
+
+(define q1 (make-queue))
+
+(print-queue (insert-queue! q1 'a)) (newline)
+(print-queue (insert-queue! q1 'b)) (newline)
+(print-queue (delete-queue! q1)) (newline)
+(print-queue (delete-queue! q1)) (newline)
+`} />
+
+## 练习 3.32
+`deque`
+
+<SchemeRunner client:load>
+```scheme
+(define (make-deque) (cons '() '()))
+
+(define front-node-ptr car)
+(define rear-node-ptr cdr)
+
+(define (set-front-node-ptr! deque new-node)
+  (set-car! deque new-node))
+(define (set-rear-node-ptr! deque new-node)
+  (set-cdr! deque new-node))
+
+(define (make-deque-node val prev next) (list val prev next))
+
+(define (val-deque-node node) (car node))
+(define (prev-deque-node node) (cadr node))
+(define (next-deque-node node) (caddr node))
+
+(define (set-deque-node-val! node new-val)
+  (set-car! node new-val))
+(define (set-deque-node-prev! node new-prev)
+  (set-car! (cdr node) new-prev))
+(define (set-deque-node-next! node new-next)
+  (set-car! (cddr node) new-next))
+
+(define (empty-deque? deque) (null? (front-node-ptr deque)))
+(define (front-deque deque)
+  (if (null? deque)
+      (error "FRONT call with an empty deque" deque)
+      (val-deque-node (front-node-ptr deque))))
+
+(define (rear-deque deque)
+  (if (null? deque)
+      (error "REAR call with a empty deque" deque)
+      (val-deque-node (rear-node-ptr deque))))
+
+(define (front-insert-deque! deque item)
+  (let ([new-node (make-deque-node item '() '())])
+    (cond [(empty-deque? deque)
+           (set-front-node-ptr! deque new-node)
+           (set-rear-node-ptr! deque new-node)]
+          [else
+           (set-deque-node-prev! (front-node-ptr deque) new-node)
+           (set-deque-node-next! new-node (front-node-ptr deque))
+           (set-front-node-ptr! deque new-node)])))
+
+(define (rear-insert-deque! deque item)
+  (let ([new-node (make-deque-node item '() '())])
+    (cond [(empty-deque? deque)
+           (front-insert-deque! deque item)]
+          [else
+           (set-deque-node-next! (rear-node-ptr deque) new-node)
+           (set-deque-node-prev! new-node (rear-node-ptr deque))
+           (set-rear-node-ptr! deque new-node)])))
+
+(define (front-delete-deque! deque)
+  (cond [(empty-deque? deque)
+         (error "FRONT-DELETE! called with an empty deque")]
+        [else
+         (set-front-node-ptr!
+          deque
+          (next-deque-node (front-node-ptr deque)))]))
+
+(define (rear-delete-deque! deque)
+  (cond [(empty-deque? deque)
+         (error "REAR-DELETE! called with an empty deque")]
+        [else
+         (set-rear-node-ptr!
+          deque
+          (prev-deque-node (rear-node-ptr deque)))]))
+
+(define (print-deque deque)
+  (define (iter node)
+    (cond [(null? node) '()]
+          [(eq? (rear-node-ptr deque) node)
+           (display " ")
+           (display (val-deque-node node))]
+          [else
+           (display " ")
+           (display (val-deque-node node))
+           (iter (next-deque-node node))]))
+  (display "(deque")
+  (iter (front-node-ptr deque))
+  (display ")"))
+
+(define d (make-deque))
+
+(print-deque d) (newline)
+(front-insert-deque! d 'b)
+(print-deque d) (newline)
+(front-insert-deque! d 'a)
+(print-deque d) (newline)
+(front-insert-deque! d 0)
+(print-deque d) (newline)
+(rear-insert-deque! d 'c)
+(print-deque d) (newline)
+(rear-insert-deque! d 'd)
+(print-deque d) (newline)
+(rear-insert-deque! d 0)
+(print-deque d) (newline)
+(rear-delete-deque! d)
+(print-deque d) (newline)
+(front-delete-deque! d)
+(print-deque d)
+```
+</SchemeRunner>
+
+# 表格的表示

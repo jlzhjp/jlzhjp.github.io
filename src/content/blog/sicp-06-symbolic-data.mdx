@@ -503,11 +503,6 @@ $$
 (define (make-tree entry left right)
   (list entry left right))
 
-(define (append list1 list2)
-  (if (null? list1)
-      list2
-      (cons (car list1) (append (cdr list1) list2))))
-
 (define (tree->list-1 tree)
   (if (null? tree)
       '()
@@ -578,3 +573,479 @@ $$
 <Todo />
 
 ## 练习 2.64
+
+通过有序链表构建平衡二叉树
+
+<SchemeCode client:load code={`
+(define (make-tree entry left right) (list entry left right))
+
+(define (entry tree) (car tree))
+
+(define (left-branch tree) (cadr tree))
+
+(define (right-branch tree) (caddr tree))
+
+(define (list->tree elements)
+  (car (partial-tree elements (length elements))))
+
+(define (partial-tree elts n)
+  (if (= n 0)
+      (cons '() elts)
+      (let* ([left-size (quotient (- n 1) 2)]
+             [left-result (partial-tree elts left-size)]
+             [left-tree (car left-result)]
+             [non-left-elts (cdr left-result)]
+             [this-entry (car non-left-elts)]
+             [right-size (- n (+ left-size 1))]
+             [right-result (partial-tree (cdr non-left-elts) right-size)]
+             [right-tree (car right-result)]
+             [remaining-elts (cdr right-result)])
+        (cons (make-tree this-entry left-tree right-tree)
+              remaining-elts))))
+
+(list->tree '(1 3 5 7 9 11))
+`} />
+
+这种通过返回剩余元素来使用递归处理单链表的方法确实令人耳目一新！
+
+```scheme
+partial_tree('(1 3 5 7 9 11) 6)
+; left_size = 2, right_size = 3
+partial_tree('(1 3))
+partial_tree('(7 8 11))
+; ...
+```
+时间复杂度：$ \Theta(n) $
+
+## 练习 2.65
+利用练习 2.63 和 练习 2.64 的结果，给出对采用（平衡）二叉树方式实现的集合的 `union-set` 和 `intersection-set` 操作的 $\Theta (n)$ 实现
+
+<SchemeCode client:load code={`
+(define (make-tree entry left right) (list entry left right))
+
+(define (entry tree) (car tree))
+
+(define (left-branch tree) (cadr tree))
+
+(define (right-branch tree) (caddr tree))
+
+(define (tree->list tree)
+  (define (copy-to-list tree result-list)
+    (if (null? tree)
+        result-list
+        (copy-to-list (left-branch tree)
+                      (cons (entry tree)
+                            (copy-to-list (right-branch tree)
+                                          result-list)))))
+  (copy-to-list tree '()))
+
+(define (list->tree elements)
+  (car (partial-tree elements (length elements))))
+
+(define (partial-tree elts n)
+  (if (= n 0)
+      (cons '() elts)
+      (let* ([left-size (quotient (- n 1) 2)]
+             [left-result (partial-tree elts left-size)]
+             [left-tree (car left-result)]
+             [non-left-elts (cdr left-result)]
+             [this-entry (car non-left-elts)]
+             [right-size (- n (+ left-size 1))]
+             [right-result (partial-tree (cdr non-left-elts) right-size)]
+             [right-tree (car right-result)]
+             [remaining-elts (cdr right-result)])
+        (cons (make-tree this-entry left-tree right-tree)
+              remaining-elts))))
+
+(define (intersection-set set1 set2)
+  (if (or (null? set1) (null? set2))
+      '()
+      (let ([x1 (car set1)] [x2 (car set2)])
+        (cond [(= x1 x2)
+               (cons x1
+                     (intersection-set (cdr set1)
+                                       (cdr set2)))]
+              [(< x1 x2)
+               (intersection-set (cdr set1) set2)]
+              [(< x2 x1)
+               (intersection-set set1 (cdr set2))]))))
+
+(define (union-set set1 set2)
+  (cond [(null? set1) set2]
+        [(null? set2) set1]
+        [else
+         (let ([x1 (car set1)] [x2 (car set2)])
+           (cond [(= x1 x2) (cons x1 (union-set (cdr set1) (cdr set2)))]
+                 [(< x1 x2) (cons x1 (union-set (cdr set1) set2))]
+                 [(> x1 x2) (cons x2 (union-set set1 (cdr set2)))]))]))
+
+(define (union-tree-set set1 set2)
+  (list->tree (union-set (tree->list set1) (tree->list set2))))
+
+(define (intersection-tree-set set1 set2)
+  (list->tree (intersection-set (tree->list set1) (tree->list set2))))
+
+(list (union-tree-set (list->tree '(1 2 3 4)) (list->tree '(3 4 5 6 7)))
+      (intersection-tree-set (list->tree '(1 2 3 4)) (list->tree '(3 4 5 6 7))))
+`} />
+
+## 集合与信息检索
+<SchemeCode client:load code={`
+(define (make-record key name) (cons key name))
+(define (key record) (car record))
+(define (name record) (cdr record))
+
+(define (make-tree entry left right) (list entry left right))
+(define (entry tree) (car tree))
+(define (left-branch tree) (cadr tree))
+(define (right-branch tree) (caddr tree))
+
+(define (list->tree elements)
+  (car (partial-tree elements (length elements))))
+
+(define (partial-tree elts n)
+  (if (= n 0)
+      (cons '() elts)
+      (let* ([left-size (quotient (- n 1) 2)]
+             [left-result (partial-tree elts left-size)]
+             [left-tree (car left-result)]
+             [non-left-elts (cdr left-result)]
+             [this-entry (car non-left-elts)]
+             [right-size (- n (+ left-size 1))]
+             [right-result (partial-tree (cdr non-left-elts) right-size)]
+             [right-tree (car right-result)]
+             [remaining-elts (cdr right-result)])
+        (cons (make-tree this-entry left-tree right-tree)
+              remaining-elts))))
+
+(define (lookup given-key set-of-records)
+  (if (null? set-of-records)
+      '()
+      (let ([cur-key (key (entry set-of-records))])
+        (cond [(= cur-key given-key) (entry set-of-records)]
+              [(< cur-key given-key) (lookup given-key (right-branch set-of-records))]
+              [(> cur-key given-key) (lookup given-key (left-branch set-of-records))]))))
+
+(define records (list (make-record 1 "Alice")
+                      (make-record 2 "Bob")
+                      (make-record 3 "Carl")
+                      (make-record 4 "Diana")
+                      (make-record 5 "Eve")
+                      (make-record 6 "Frank")
+                      (make-record 7 "Grace")
+                      (make-record 8 "Hank")
+                      (make-record 9 "Ivy")))
+
+(define records-tree (list->tree records))
+
+(lookup 6 records-tree)
+`} />
+
+# 实例 Huffman 编码树
+
+## 练习 2.67
+
+消息的解码
+
+<SchemeCode client:load code={`
+(define (make-leaf symbol weight)
+  (list 'leaf symbol weight))
+
+(define (leaf? object)
+  (eq? (car object) 'leaf))
+
+(define (symbol-leaf x) (cadr x))
+(define (weight-leaf x) (caddr x))
+
+
+(define (make-code-tree left right)
+  (list left
+        right
+        (append (symbols left) (symbols right))
+        (+ (weight left) (weight right))))
+
+(define (left-branch tree) (car tree))
+(define (right-branch tree) (cadr tree))
+
+(define (symbols tree)
+  (if (leaf? tree)
+      (list (symbol-leaf tree))
+      (caddr tree)))
+
+(define (weight tree)
+  (if (leaf? tree)
+      (weight-leaf tree)
+      (cadddr tree)))
+
+
+(define (choose-branch bit branch)
+  (cond [(= bit 0) (left-branch branch)]
+        [(= bit 1) (right-branch branch)]
+        [else (error "bad bit -- CHOOSE-BRANCH" bit)]))
+
+(define (decode bits tree)
+  (define (decode-1 bits current-branch)
+    (if (null? bits)
+        '()
+        (let ([next-branch
+               (choose-branch (car bits) current-branch)])
+          (if (leaf? next-branch)
+              (cons (symbol-leaf next-branch)
+                    (decode-1 (cdr bits) tree))
+              (decode-1 (cdr bits) next-branch)))))
+  (decode-1 bits tree))
+
+(define sample-tree
+  (make-code-tree (make-leaf 'A 4)
+                  (make-code-tree
+                   (make-leaf 'B 2)
+                   (make-code-tree (make-leaf 'D 1)
+                                   (make-leaf 'C 1)))))
+
+(define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
+
+(decode sample-message sample-tree)
+`} />
+
+## 练习 2.68
+
+消息的编码
+
+<SchemeCode client:load code={`
+(define (make-leaf symbol weight)
+  (list 'leaf symbol weight))
+
+(define (leaf? object)
+  (eq? (car object) 'leaf))
+
+(define (symbol-leaf x) (cadr x))
+(define (weight-leaf x) (caddr x))
+
+
+(define (make-code-tree left right)
+  (list left
+        right
+        (append (symbols left) (symbols right))
+        (+ (weight left) (weight right))))
+
+(define (left-branch tree) (car tree))
+(define (right-branch tree) (cadr tree))
+
+(define (symbols tree)
+  (if (leaf? tree)
+      (list (symbol-leaf tree))
+      (caddr tree)))
+
+(define (weight tree)
+  (if (leaf? tree)
+      (weight-leaf tree)
+      (cadddr tree)))
+
+(define sample-tree
+  (make-code-tree (make-leaf 'A 4)
+                  (make-code-tree
+                   (make-leaf 'B 2)
+                   (make-code-tree (make-leaf 'D 1)
+                                   (make-leaf 'C 1)))))
+
+(define (encode message tree)
+  (define (encode-symbol symbol tree)
+      (cond [(leaf? tree) '()]
+            [(memq symbol (symbols (left-branch tree))) (cons 0 (encode-symbol symbol (left-branch tree)))]
+            [(memq symbol (symbols (right-branch tree))) (cons 1 (encode-symbol symbol (right-branch tree)))]
+            [else (error "bad symbol -- ENCODE-SYMBOL" symbol)]))
+
+  (if (null? message)
+      '()
+      (append (encode-symbol (car message) tree)
+              (encode (cdr message) tree))))
+
+(encode '(A D A B B C A) sample-tree)
+`} />
+
+## 练习 2.69
+生成 Huffman 编码树
+
+<SchemeCode client:load code={`
+(define (make-leaf symbol weight)
+  (list 'leaf symbol weight))
+
+(define (leaf? object)
+  (eq? (car object) 'leaf))
+
+(define (symbol-leaf x) (cadr x))
+(define (weight-leaf x) (caddr x))
+
+
+(define (make-code-tree left right)
+  (list left
+        right
+        (append (symbols left) (symbols right))
+        (+ (weight left) (weight right))))
+
+(define (left-branch tree) (car tree))
+(define (right-branch tree) (cadr tree))
+
+(define (symbols tree)
+  (if (leaf? tree)
+      (list (symbol-leaf tree))
+      (caddr tree)))
+
+(define (weight tree)
+  (if (leaf? tree)
+      (weight-leaf tree)
+      (cadddr tree)))
+
+(define (adjoin-set x set)
+  (cond [(null? set) (list x)]
+        [(< (weight x) (weight (car set))) (cons x set)]
+        [else (cons (car set)
+                    (adjoin-set x (cdr set)))]))
+
+; pairs: ((A 4) (B 2) (C 1) (D 1))
+(define (make-leaf-set pairs)
+  (if (null? pairs)
+      '()
+      (let ([pair (car pairs)])
+        (adjoin-set (make-leaf (car pair)
+                                (cadr pair))
+                    (make-leaf-set (cdr pairs))))))
+
+(define (generate-huffman-tree pairs)
+  (define (successive-merge leaf-set)
+    (if (null? (cdr leaf-set))
+        (car leaf-set)
+        (successive-merge (adjoin-set (make-code-tree (car leaf-set)
+                                                      (cadr leaf-set))
+                                      (cddr leaf-set)))))
+  (successive-merge (make-leaf-set pairs)))
+
+(generate-huffman-tree '((A 4) (B 2) (C 1) (D 1)))
+`} />
+
+## 练习 2.70
+
+对歌词进行编码
+
+<SchemeCode client:load code={`
+(define (make-leaf symbol weight)
+  (list 'leaf symbol weight))
+
+(define (leaf? object)
+  (eq? (car object) 'leaf))
+
+(define (symbol-leaf x) (cadr x))
+(define (weight-leaf x) (caddr x))
+
+
+(define (make-code-tree left right)
+  (list left
+        right
+        (append (symbols left) (symbols right))
+        (+ (weight left) (weight right))))
+
+(define (left-branch tree) (car tree))
+(define (right-branch tree) (cadr tree))
+
+(define (symbols tree)
+  (if (leaf? tree)
+      (list (symbol-leaf tree))
+      (caddr tree)))
+
+(define (weight tree)
+  (if (leaf? tree)
+      (weight-leaf tree)
+      (cadddr tree)))
+
+(define (adjoin-set x set)
+  (cond [(null? set) (list x)]
+        [(< (weight x) (weight (car set))) (cons x set)]
+        [else (cons (car set)
+                    (adjoin-set x (cdr set)))]))
+
+; pairs: ((A 4) (B 2) (C 1) (D 1))
+(define (make-leaf-set pairs)
+  (if (null? pairs)
+      '()
+      (let ([pair (car pairs)])
+        (adjoin-set (make-leaf (car pair)
+                                (cadr pair))
+                    (make-leaf-set (cdr pairs))))))
+
+
+(define (choose-branch bit branch)
+  (cond [(= bit 0) (left-branch branch)]
+        [(= bit 1) (right-branch branch)]
+        [else (error "bad bit -- CHOOSE-BRANCH" bit)]))
+
+(define (decode bits tree)
+  (define (decode-1 bits current-branch)
+    (if (null? bits)
+        '()
+        (let ([next-branch
+                (choose-branch (car bits) current-branch)])
+          (if (leaf? next-branch)
+              (cons (symbol-leaf next-branch)
+                    (decode-1 (cdr bits) tree))
+              (decode-1 (cdr bits) next-branch)))))
+  (decode-1 bits tree))
+
+(define (generate-huffman-tree pairs)
+  (define (successive-merge leaf-set)
+    (if (null? (cdr leaf-set))
+        (car leaf-set)
+        (successive-merge (adjoin-set (make-code-tree (car leaf-set)
+                                                      (cadr leaf-set))
+                                      (cddr leaf-set)))))
+  (successive-merge (make-leaf-set pairs)))
+
+(define (encode message tree)
+  (define (encode-symbol symbol tree)
+      (cond [(leaf? tree) '()]
+            [(memq symbol (symbols (left-branch tree))) (cons 0 (encode-symbol symbol (left-branch tree)))]
+            [(memq symbol (symbols (right-branch tree))) (cons 1 (encode-symbol symbol (right-branch tree)))]
+            [else (error "bad symbol -- ENCODE-SYMBOL" symbol)]))
+
+  (if (null? message)
+      '()
+      (append (encode-symbol (car message) tree)
+              (encode (cdr message) tree))))
+
+(define song-word-frequency
+  '((A 2) (NA 16) (BOOM 1) (SHA 3) (GET 2) (YIP 9) (JOB 2) (WAH 1)))
+
+(define song-huffman-tree (generate-huffman-tree song-word-frequency))
+
+(define song
+  '(GET A JOB
+        SHA NA NA NA NA NA NA NA NA
+        GET A JOB
+        SHA NA NA NA NA NA NA NA NA
+        WAH YIP YIP YIP YIP YIP YIP YIP YIP YIP
+        SHA BOOM))
+
+(define encoded-song (encode song song-huffman-tree))
+
+(display "Huffman Encoding Length: " )
+(display (length encoded-song)) (newline)
+
+(display "Binary Encoding Length: " )
+(display (* 3 (length song))) (newline)
+
+(display "Encoded: ")
+(display encoded-song) (newline)
+
+(display "Decoded: ")
+(display (decode encoded-song song-huffman-tree))
+`} />
+
+## 练习 2.71
+
+假定我们有一棵 $n$ 个符号的字母表的 Huffman 树，其中各符号的相对频度分别是 $1, 2, 4, \dots, 2^{n-1}$ 。请对 $n=5$ 和 $n=10$ 勾勒出有关的树的样子
+
+对于这样的树，编码出现的最频繁的符号用 1 个二进制位
+
+编码最不频繁的符号用 $n - 1$ 个二进制位
+
+## 练习 2.72
+<Todo />
