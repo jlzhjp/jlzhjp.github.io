@@ -430,6 +430,7 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 
 ## 对树的映射
 
+<SchemeRunner client:load>
 ```scheme
 (define (scale-tree tree factor)
   (cond [(null? tree) '()]
@@ -437,18 +438,30 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
         [else (cons (scale-tree (car tree) factor)
                     (scale-tree (cdr tree) factor))]))
 
-(define (scale-tree* tree factor)
+(scale-tree '((1 2) (3 4)) 2)
+```
+</SchemeRunner>
+
+使用 `map` 的实现
+
+<SchemeRunner client:load>
+```scheme
+(define (scale-tree tree factor)
   (map (lambda (sub-tree)
          (if (pair? sub-tree)
              (scale-tree sub-tree factor)
              (* sub-tree factor)))
        tree))
+
+(scale-tree '((1 2) (3 4)) 2)
 ```
+</SchemeRunner>
 
 ## 练习 2.30
 
 定义 `square-tree`
 
+<SchemeRunner client:load>
 ```scheme
 (define (square x) (* x x))
 
@@ -458,19 +471,33 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
         [else (cons (square-tree (car tree))
                     (square-tree (cdr tree)))]))
 
-(define (square-tree* tree)
+(square-tree '((1 2) (3 4)))
+```
+</SchemeRunner>
+
+<SchemeRunner client:load>
+```scheme
+(define (square x) (* x x))
+
+(define (square-tree tree)
   (map (lambda (sub-tree)
          (if (pair? sub-tree)
              (square-tree sub-tree)
              (square sub-tree)))
        tree))
+
+(square-tree '((1 2) (3 4)))
 ```
+</SchemeRunner>
 
 ## 练习 2.31
 
 `tree-map`
 
+<SchemeRunner client:load>
 ```scheme
+(define (square x) (* x x))
+
 (define (tree-map f tree)
   (map (lambda (sub-tree)
          (if (pair? sub-tree)
@@ -478,13 +505,17 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
              (f sub-tree)))
        tree))
 
-(define (square-tree** tree) (tree-map square tree))
+(define (square-tree tree) (tree-map square tree))
+
+(square-tree '((1 2) (3 4)))
 ```
+</SchemeRunner>
 
 ## 练习 2.32
 
 求集合的所有子集
 
+<SchemeRunner client:load>
 ```scheme
 (define (subsets s)
   (if (null? s)
@@ -492,23 +523,33 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
       (let ((rest (subsets (cdr s))))
         (append rest (map (lambda (subset) (append (list (car s)) subset))
                           rest)))))
+
+(subsets '(1 2 3 4))
 ```
+</SchemeRunner>
 
 # 序列操作的抽象
 
 ## 实例 计算值为奇数的叶子的平方和
 
+<SchemeRunner client:load>
 ```scheme
+(define (square x) (* x x))
+
 (define (sum-odd-squares tree)
   (cond [(null? tree) 0]
         [(not (pair? tree))
          (if (odd? tree) (square tree) 0)]
         [else (+ (sum-odd-squares (car tree))
                  (sum-odd-squares (cdr tree)))]))
+
+(sum-odd-squares '((1 2 (3)) (4 (5) 6)))
 ```
+</SchemeRunner>
 
 ## 实例 构造出所有偶数的斐波那契数的一个表
 
+<SchemeRunner client:load>
 ```scheme
 (define (even-fibs n)
   (define (fib-iter a b count)
@@ -526,9 +567,12 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
               (cons f (next (+ k 1)))
               (next (+ k 1))))))
   (next 0))
-```
 
-## 实例 信号流辅助函数
+(even-fibs 10)
+```
+</SchemeRunner>
+
+## 信号流辅助函数
 
 ```scheme
 (define (filter predicate sequence)
@@ -557,15 +601,59 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
 
 ## 实例 重新实现 `sum-odd-squares` 和 `even-fibs`
 
+<SchemeRunner client:load>
 ```scheme
-(define (sum-odd-squares* tree)
+(define (square x) (* x x))
+
+(define (filter predicate sequence)
+  (cond [(null? sequence) nil]
+        [(predicate (car sequence)) (cons (car sequence)
+                                          (filter predicate (cdr sequence)))]
+        [else (filter predicate (cdr sequence))]))
+
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (enumerate-tree tree)
+  (cond [(null? tree) nil]
+        [(not (pair? tree)) (list tree)]
+        [else (append (enumerate-tree (car tree))
+                      (enumerate-tree (cdr tree)))]))
+
+(define (sum-odd-squares tree)
   (accumulate +
               0
               (map square
                    (filter odd?
                            (enumerate-tree tree)))))
 
-(define (even-fibs* n)
+(sum-odd-squares '((1 2 (3)) (4 (5) 6)))
+```
+</SchemeRunner>
+
+<SchemeRunner client:load>
+```scheme
+(define (filter predicate sequence)
+  (cond [(null? sequence) nil]
+        [(predicate (car sequence)) (cons (car sequence)
+                                          (filter predicate (cdr sequence)))]
+        [else (filter predicate (cdr sequence))]))
+
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (enumerate-interval low high)
+  (if (> low high)
+      nil
+      (cons low (enumerate-interval (+ low 1) high))))
+
+(define (even-fibs n)
   (define (fib-iter a b count)
     (if (= count 0)
         b
@@ -578,22 +666,61 @@ Scheme 提供的 `map` 以一个取 $n$ 个参数的过程和 $n$ 个表为参�
               (filter even?
                       (map fib
                            (enumerate-interval 0 n)))))
+
+(even-fibs 10)
 ```
+</SchemeRunner>
 
 ## 练习 2.33
 
 将一些基本的表操作看作累积的定义
 
+<SchemeRunner client:load>
 ```scheme
-(define (map* p sequence)
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (square x) (* x x))
+
+(define (map p sequence)
   (accumulate (lambda (x rest) (cons (p x) rest)) nil sequence))
 
-(define (append* seq1 seq2)
+(map square '(1 2 3))
+```
+</SchemeRunner>
+
+<SchemeRunner client:load>
+```scheme
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (append seq1 seq2)
   (accumulate cons seq2 seq1))
 
-(define (length** sequence)
-  (accumulate (lambda (x y) (+ y 1)) 0 sequence))
+(append '(1 2 3) '(4 5 6))
 ```
+</SchemeRunner>
+
+<SchemeRunner client:load>
+```scheme
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (length sequence)
+  (accumulate (lambda (x y) (+ y 1)) 0 sequence))
+
+(length '(1 2 3))
+```
+</SchemeRunner>
 
 ## 练习 2.34
 
@@ -611,29 +738,57 @@ $$
 (\cdots (a_nx + a_{n - 1})x + \cdots + a_1)x + a_0
 $$
 
+<SchemeRunner client:load>
 ```scheme
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
 (define (horner-eval x coefficient-sequence)
   (accumulate (lambda (this-coeff higher-terms) (+ (* higher-terms x) this-coeff))
               0
               coefficient-sequence))
+
+(horner-eval 2 '(1 3 0 5 0 1))
 ```
+</SchemeRunner>
 
 ## 练习 2.35
 
 将 `count-leaves` 重新定义为一个累积
 
+<SchemeRunner client:load>
 ```scheme
-(define (count-leaves* t)
-  (accumulate + 0 (map (lambda (root)
-                         (cond [(null? root) 0]
-                               [(not (pair? root)) 1]
-                               [else (+ (count-leaves (car root))
-                                        (count-leaves (cdr root)))])) t)))
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (enumerate-tree tree)
+  (cond [(null? tree) nil]
+        [(not (pair? tree)) (list tree)]
+        [else (append (enumerate-tree (car tree))
+                      (enumerate-tree (cdr tree)))]))
+
+(define (count-leaves tree)
+  (accumulate + 0 (map
+                   (lambda (x) 1)
+                     (enumerate-tree tree))))
+
+(count-leaves '(1 (2 (3 4))))
 ```
+</SchemeRunner>
 
 ## 练习 2.36
 
 定义 `accumulate-n`
+
+`accumulate-n` 与 `accumulate` 类似，除了它的第三个参数是一个序列的序列，假定其中的每个序列的元素相同。
+
+它用指定的累积过程去组合起所有序列的第一个元素，而后是所有序列的第二个元素，并如此做下去，返回得到的所有结果的序列。
 
 ```scheme
 (define (accumulate-n op init seqs)
@@ -647,7 +802,20 @@ $$
 
 矩阵操作
 
+<SchemeRunner client:load>
 ```scheme
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs))
+      nil
+      (cons (accumulate op init (map car seqs))
+            (accumulate-n op init (map cdr seqs)))))
+
 (define (dot-product v w)
   (accumulate + 0 (map * v w)))
 
@@ -662,12 +830,38 @@ $$
     (map (lambda (r)
            (map (lambda (c)
                   (dot-product r c)) cols)) m)))
+
+(define m
+  '((1 2 3 4)
+    (4 5 6 6)
+    (6 7 8 9)))
+
+(define n
+  '((1 2)
+    (3 4)
+    (5 6)
+    (7 8)))
+
+(define v '(1 2 3 4))
+
+(define (print-matrix m)
+  (for-each
+   (lambda (row)
+     (display row)
+     (newline)) m))
+
+(display (dot-product v v)) (newline) (newline)
+(display (matrix-*-vector m v)) (newline) (newline)
+(print-matrix (transpose m)) (newline)
+(print-matrix (matrix-*-matrix m n))
 ```
+</SchemeRunner>
 
 ## 练习 2.38
 
 `fold-right`
 
+<SchemeRunner client:load>
 ```scheme
 (define (fold-left op initial sequence)
   (define (iter result rest)
@@ -681,38 +875,76 @@ $$
   (if (null? sequence)
       initial
       (op (car sequence)
-          (accumulate op initial (cdr sequence)))))
+          (fold-right op initial (cdr sequence)))))
 
-(fold-right / 1 (list 1 2 3))
-; 3/2
-
-(fold-left / 1 (list 1 2 3))
-; 1/6
-
-(fold-right list nil (list 1 2 3))
-'(1 (2 (3 ())))
-
-(fold-left list nil (list 1 2 3))
-'(((() 1) 2) 3)
+(display (fold-right / 1 (list 1 2 3))) (newline) ; 3/2
+(display (fold-left / 1 (list 1 2 3))) (newline) ; 1/6
+(display (fold-right list nil (list 1 2 3))) (newline)
+(display (fold-left list nil (list 1 2 3))) (newline)
 ```
-`op` 满足交换率时， `fold-right` 和 `fold-left` 在任何序列上都产生相同的结果
+</SchemeRunner>
+
+`op` 满足结合率时， `fold-right` 和 `fold-left` 在任何序列上都产生相同的结果
 
 ## 练习 2.39
 
 分别使用 `fold-right` 和 `fold-left` 实现 `reverse`
 
+<SchemeRunner client:load>
 ```scheme
-(define (reverse* sequence)
+(define (fold-left op initial sequence)
+  (define (iter result rest)
+    (if (null? rest)
+        result
+        (iter (op result (car rest))
+              (cdr rest))))
+  (iter initial sequence))
+
+(define (reverse sequence)
   (fold-right (lambda (x y) (append y (list x))) nil sequence))
 
-(define (reverse** sequence)
-  (fold-left (lambda (x y) (cons y x)) nil sequence))
+(reverse '(1 2 3 4 5 6))
 ```
+</SchemeRunner>
+
+<SchemeRunner client:load>
+```scheme
+(define (fold-right op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (fold-right op initial (cdr sequence)))))
+
+(define (reverse sequence)
+  (fold-left (lambda (x y) (cons y x)) nil sequence))
+
+(reverse '(1 2 3 4 5 6))
+```
+</SchemeRunner>
 
 ## 嵌套映射
 
 ## 实例 找出和为质数的序对
+给定自然数 $n$ ，找出所有**不同**的有序对 $i$ 和 $j$ ，其中 $1 \leqslant j < i \leqslant n$ ，使得 $i + j$ 是素数。
+
+<SchemeRunner client:load>
 ```scheme
+(define (square x) (* x x))
+
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (flatmap proc seq)
+  (accumulate append nil (map proc seq)))
+
+(define (enumerate-interval low high)
+  (if (> low high)
+      nil
+      (cons low (enumerate-interval (+ low 1) high))))
+
 (define (smallest-divisor n)
   (find-divisor n 2))
 
@@ -742,10 +974,24 @@ $$
                   (map (lambda (j) (list i j))
                        (enumerate-interval 1 (- i 1))))
                 (enumerate-interval 1 n)))))
+
+(prime-sum-pairs 6)
 ```
+</SchemeRunner>
 
 ## 实例 生成集合元素的所有排列
+
+<SchemeRunner client:load>
 ```scheme
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (flatmap proc seq)
+  (accumulate append nil (map proc seq)))
+
 (define (permutations s)
   (if (null? s)
       (list nil)
@@ -754,16 +1000,36 @@ $$
                       (permutations (remove x s))))
                s)))
 
+(permutations '(1 2 3))
+```
+</SchemeRunner>
+
+## 实例 从序列中删除某个元素
+
+<SchemeRunner client:load>
+```scheme
 (define (remove item sequence)
   (filter (lambda (x) (not (= x item)))
           sequence))
+
+(remove 3 '(1 2 3 3 4))
 ```
+</SchemeRunner>
 
 ## 练习 2.40
 
-`unique-pairs`
+定义 `unique-pairs` 简化 `prime-sum-pairs` 的实现
 
+<SchemeRunner client:load>
 ```scheme
+(define (flatmap proc seq)
+  (accumulate append nil (map proc seq)))
+
+(define (enumerate-interval low high)
+  (if (> low high)
+      nil
+      (cons low (enumerate-interval (+ low 1) high))))
+
 (define (unique-pairs n)
   (flatmap (lambda (i)
              (map (lambda (j) (list i j))
@@ -773,33 +1039,69 @@ $$
 (define (prime-sum-pairs n)
   (map make-pair-sum
        (filter prime-sum? (unique-pairs n))))
+
+(prime-sum-pairs 6)
 ```
+</SchemeRunner>
 
 ## 练习 2.41
 
 所有小于等于给定整数 $n$ 的正相异整数组成的有序三元组，每个三元组的三个元之和为给定的整数 $s$
 
+<SchemeRunner client:load>
 ```scheme
+(define (fold-right op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (fold-right op initial (cdr sequence)))))
+
+(define (flatmap proc seq)
+  (fold-right append nil (map proc seq)))
+
+(define (enumerate-interval low high)
+  (if (> low high)
+      nil
+      (cons low (enumerate-interval (+ low 1) high))))
+
 (define (unique-triples n)
   (flatmap (lambda (i)
              (flatmap (lambda (j)
                         (map (lambda (k) (list i j k))
-                             (enumerate-interval 1 (- j 1))))
-                      (enumerate-interval 1 (- i 1))))
+                             (enumerate-interval (+ j 1) n)))
+                      (enumerate-interval (+ i 1) n)))
            (enumerate-interval 1 n)))
 
-(define (sum-n-triples n)
+(define (sum-triples n s)
   (define (sum lst) (fold-right (lambda (x y) (+ x y)) 0 lst))
-  (flatmap permutations
-           (filter (lambda (t) (= n (sum t)))
-                   (unique-triples n))))
+
+  (filter (lambda (t) (= s (sum t)))
+          (unique-triples n)))
+
+(sum-triples 8 10)
 ```
+</SchemeRunner>
 
 ## 练习 2.42
 
 八皇后问题
 
+<SchemeRunner client:load>
 ```scheme
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (flatmap proc seq)
+  (accumulate append nil (map proc seq)))
+
+(define (enumerate-interval low high)
+  (if (> low high)
+      nil
+      (cons low (enumerate-interval (+ low 1) high))))
+
 (define (all pre lst)
   (if (null? lst)
       #t
@@ -842,7 +1144,11 @@ $$
                          (queen-cols (- k 1))))))
   (queen-cols board-size))
 
+(define solutions (queens 8))
+(display (length solutions))
+solutions
 ```
+</SchemeRunner>
 
 ## 练习 2.43
 
@@ -861,19 +1167,584 @@ Louis Reasoner 遇到的问题
                          (enumerate-interval 1 board-size)))))
   (queen-cols board-size))
 ```
-调用 `queen-cols` 的次数翻了 `board-size` 倍
+<Todo />
 
 # 实例 一个图形语言
 
-## 练习 2.44
+## 练习 2.44、2.45、2.50 (Part 1)、2.51
 
-定义 `corner-split` 中使用的过程 `up-split`
-
+<SchemeRunner client:load output="painter">
 ```scheme
-(define (up-split painter n)
+(define (frame-coord-map frame)
+  (lambda (v)
+    (add-vect
+     (origin-frame frame)
+     (add-vect (scale-vect (xcor-vect v)
+                           (edge1-frame frame))
+               (scale-vect (ycor-vect v)
+                           (edge2-frame frame))))))
+
+(define (draw-segment frame seg)
+  (let* ([coord-map (frame-coord-map frame)]
+         [mapped-start (coord-map (start-segment seg))]
+         [mapped-end (coord-map (end-segment seg))])
+    ($line (xcor-vect mapped-start)
+           (ycor-vect mapped-start)
+           (xcor-vect mapped-end)
+           (ycor-vect mapped-end))))
+
+(define (segments->painter segment-list)
+  (lambda (frame)
+    (for-each
+     (lambda (segment) (draw-segment frame segment))
+     segment-list)))
+
+(define wave
+  (segments->painter
+   (list
+    (make-segment (make-vect 0.46 0.00) (make-vect 0.37 0.22))
+    (make-segment (make-vect 0.37 0.22) (make-vect 0.46 0.34))
+    (make-segment (make-vect 0.46 0.34) (make-vect 0.37 0.33))
+    (make-segment (make-vect 0.37 0.33) (make-vect 0.22 0.45))
+    (make-segment (make-vect 0.22 0.45) (make-vect 0.00 0.28))
+    (make-segment (make-vect 0.00 0.33) (make-vect 0.22 0.55))
+    (make-segment (make-vect 0.22 0.55) (make-vect 0.39 0.42))
+    (make-segment (make-vect 0.39 0.42) (make-vect 0.31 1.00))
+    (make-segment (make-vect 0.54 0.00) (make-vect 0.63 0.22))
+    (make-segment (make-vect 0.63 0.22) (make-vect 0.54 0.34))
+    (make-segment (make-vect 0.54 0.34) (make-vect 0.63 0.33))
+    (make-segment (make-vect 0.63 0.33) (make-vect 1.00 0.67))
+    (make-segment (make-vect 1.00 0.72) (make-vect 0.61 0.42))
+    (make-segment (make-vect 0.61 0.42) (make-vect 0.69 1.00))
+    (make-segment (make-vect 0.39 1.00) (make-vect 0.50 0.68))
+    (make-segment (make-vect 0.50 0.68) (make-vect 0.61 1.00)))))
+
+(define (transform-painter painter origin corner1 corner2)
+  (lambda (frame)
+    (let* ([m (frame-coord-map frame)]
+           [new-origin (m origin)])
+      (painter
+       (make-frame new-origin
+                   (sub-vect (m corner1) new-origin)
+                   (sub-vect (m corner2) new-origin))))))
+
+(define (flip-vert painter)
+  (transform-painter painter
+                     (make-vect 0.0 1.0)
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 0.0)))
+
+(define (flip-horiz painter)
+  (transform-painter painter
+                     (make-vect 1.0 0.0)
+                     (make-vect 0.0 0.0)
+                     (make-vect 1.0 1.0)))
+
+(define (beside painter1 painter2)
+  (let* ([split-point (make-vect 0.5 0.0)]
+         [paint-left
+          (transform-painter painter1
+                             (make-vect 0.0 0.0)
+                             split-point
+                             (make-vect 0.0 1.0))]
+         [paint-right
+          (transform-painter painter2
+                             split-point
+                             (make-vect 1.0 0.0)
+                             (make-vect 0.5 1.0))])
+    (lambda (frame)
+      (paint-left frame)
+      (paint-right frame))))
+
+(define (below painter1 painter2)
+  (let* ([split-point (make-vect 0.0 0.5)]
+         [paint-bottom
+          (transform-painter painter1
+                             split-point
+                             (make-vect 1.0 0.5)
+                             (make-vect 0.0 1.0))]
+         [paint-top
+          (transform-painter painter2
+                             (make-vect 0.0 0.0)
+                             (make-vect 1.0 0.0)
+                             split-point)])
+    (lambda (frame)
+      (paint-bottom frame)
+      (paint-top frame))))
+
+(define (split split1 split2)
+  (lambda (painter n)
+    (if (= n 0)
+        painter
+        (let ([smaller ((split split1 split2) painter (- n 1))])
+          (split1 painter (split2 smaller smaller))))))
+
+(define right-split (split beside below))
+
+(define up-split (split below beside))
+
+(define (corner-split painter n)
   (if (= n 0)
       painter
-      (let ([smaller (up-split painter (- n 1))])
-        (below painter (beside smaller smaller)))))
+      (let* ([up (up-split painter (- n 1))]
+             [right (right-split painter (- n 1))]
+             [top-left (beside up up)]
+             [bottom-right (below right right)]
+             [corner (corner-split painter (- n 1))])
+        (beside (below painter top-left)
+                (below bottom-right corner)))))
+
+(define (square-limit painter n)
+  (let* ([quarter (corner-split painter n)]
+         [half (beside (flip-horiz quarter) quarter)])
+    (below (flip-vert half) half)))
+
+(square-limit wave 5)
 ```
-<Todo />
+</SchemeRunner>
+
+## 练习 2.46
+
+向量的加法、减法和伸缩
+
+<SchemeRunner client:load>
+```scheme
+(define (make-vect x y) (cons x y))
+(define xcor-vect car)
+(define ycor-vect cdr)
+
+(define (add-vect v1 v2)
+  (make-vect (+ (xcor-vect v1) (xcor-vect v2))
+             (+ (ycor-vect v1) (ycor-vect v2))))
+
+(define (sub-vect v1 v2)
+  (make-vect (- (xcor-vect v1) (xcor-vect v2))
+             (- (ycor-vect v1) (ycor-vect v2))))
+
+(define (scale-vect s v)
+  (make-vect (* s (xcor-vect v))
+             (* s (ycor-vect v))))
+
+(define v1 (make-vect 1 2))
+(define v2 (make-vect 3 4))
+
+(display (add-vect v1 v2)) (newline)
+(display (sub-vect v2 v1)) (newline)
+(display (scale-vect 2 v2)) (newline)
+```
+</SchemeRunner>
+
+## 练习 2.47
+
+框架的表示
+
+<SchemeRunner client:load>
+```scheme
+(define (make-frame origin edge1 edge2)
+  (list origin edge1 edge2))
+
+(define origin-frame car)
+(define edge1-frame cadr)
+(define edge2-frame caddr)
+
+(define (make-vect x y) (cons x y))
+
+(define frame (make-frame (make-vect 0 0)
+                          (make-vect 0 1)
+                          (make-vect 1 0)))
+
+(display "Origin: ") (display (origin-frame frame)) (newline)
+(display "Edge1: ") (display (edge1-frame frame)) (newline)
+(display "Edge2: ") (display (edge2-frame frame)) (newline)
+```
+</SchemeRunner>
+
+<SchemeRunner client:load>
+```scheme
+(define (make-vect x y) (cons x y))
+
+(define (make-frame origin edge1 edge2)
+  (cons origin (cons edge1 edge2)))
+
+(define origin-frame car)
+(define edge1-frame cadr)
+(define edge2-frame cddr)
+
+(define frame (make-frame (make-vect 0 0)
+                          (make-vect 0 1)
+                          (make-vect 1 0)))
+
+(display "Origin: ") (display (origin-frame frame)) (newline)
+(display "Edge1: ") (display (edge1-frame frame)) (newline)
+(display "Edge2: ") (display (edge2-frame frame)) (newline)
+```
+</SchemeRunner>
+
+## 练习 2.48
+
+线段的表示
+
+<SchemeRunner client:load>
+```scheme
+(define (make-vect x y) (cons x y))
+
+(define (make-segment start end)
+  (cons start end))
+
+(define start-segment car)
+(define end-segment cdr)
+
+(define seg (make-segment (make-vect 1 2)
+                          (make-vect 3 4)))
+
+(display "Start: ") (display (start-segment seg)) (newline)
+(display "End: ") (display (end-segment seg)) (newline)
+```
+</SchemeRunner>
+
+## 练习 2.49
+
+(a) 画出给定框架边界的画家
+
+<SchemeRunner client:load output="painter">
+```scheme
+(define (frame-coord-map frame)
+  (lambda (v)
+    (add-vect
+     (origin-frame frame)
+     (add-vect (scale-vect (xcor-vect v)
+                           (edge1-frame frame))
+               (scale-vect (ycor-vect v)
+                           (edge2-frame frame))))))
+
+(define (draw-segment frame seg)
+  (let* ([coord-map (frame-coord-map frame)]
+         [mapped-start (coord-map (start-segment seg))]
+         [mapped-end (coord-map (end-segment seg))])
+    ($line (xcor-vect mapped-start)
+           (ycor-vect mapped-start)
+           (xcor-vect mapped-end)
+           (ycor-vect mapped-end))))
+
+(define (segments->painter segment-list)
+  (lambda (frame)
+    (for-each
+     (lambda (segment) (draw-segment frame segment))
+     segment-list)))
+
+(segments->painter
+ (list
+  (make-segment (make-vect 0 0) (make-vect 0 1))
+  (make-segment (make-vect 0 1) (make-vect 1 1))
+  (make-segment (make-vect 1 1) (make-vect 1 0))
+  (make-segment (make-vect 1 0) (make-vect 0 0))))
+```
+</SchemeRunner>
+
+(b) 画出一个叉号的画家
+
+<SchemeRunner client:load output="painter">
+```scheme
+(define (frame-coord-map frame)
+  (lambda (v)
+    (add-vect
+     (origin-frame frame)
+     (add-vect (scale-vect (xcor-vect v)
+                           (edge1-frame frame))
+               (scale-vect (ycor-vect v)
+                           (edge2-frame frame))))))
+
+(define (draw-segment frame seg)
+  (let* ([coord-map (frame-coord-map frame)]
+         [mapped-start (coord-map (start-segment seg))]
+         [mapped-end (coord-map (end-segment seg))])
+    ($line (xcor-vect mapped-start)
+           (ycor-vect mapped-start)
+           (xcor-vect mapped-end)
+           (ycor-vect mapped-end))))
+
+(define (segments->painter segment-list)
+  (lambda (frame)
+    (for-each
+     (lambda (segment) (draw-segment frame segment))
+     segment-list)))
+
+(segments->painter
+ (list
+  (make-segment (make-vect 0 0) (make-vect 1 1))
+  (make-segment (make-vect 1 0) (make-vect 0 1))))
+```
+</SchemeRunner>
+
+(c) 画出一个菱形的画家
+
+<SchemeRunner client:load output="painter">
+```scheme
+(define (frame-coord-map frame)
+  (lambda (v)
+    (add-vect
+     (origin-frame frame)
+     (add-vect (scale-vect (xcor-vect v)
+                           (edge1-frame frame))
+               (scale-vect (ycor-vect v)
+                           (edge2-frame frame))))))
+
+(define (draw-segment frame seg)
+  (let* ([coord-map (frame-coord-map frame)]
+         [mapped-start (coord-map (start-segment seg))]
+         [mapped-end (coord-map (end-segment seg))])
+    ($line (xcor-vect mapped-start)
+           (ycor-vect mapped-start)
+           (xcor-vect mapped-end)
+           (ycor-vect mapped-end))))
+
+(define (segments->painter segment-list)
+  (lambda (frame)
+   (for-each
+    (lambda (segment) (draw-segment frame segment))
+    segment-list)))
+
+(segments->painter
+ (list
+  (make-segment (make-vect 0.5 0) (make-vect 1 0.5))
+  (make-segment (make-vect 1 0.5) (make-vect 0.5 1))
+  (make-segment (make-vect 0.5 1) (make-vect 0 0.5))
+  (make-segment (make-vect 0 0.5) (make-vect 0.5 0))))
+```
+</SchemeRunner>
+
+(d) 画家 wave
+
+<SchemeRunner client:load output="painter">
+```scheme
+(define (frame-coord-map frame)
+  (lambda (v)
+    (add-vect
+     (origin-frame frame)
+     (add-vect (scale-vect (xcor-vect v)
+                           (edge1-frame frame))
+               (scale-vect (ycor-vect v)
+                           (edge2-frame frame))))))
+
+(define (draw-segment frame seg)
+  (let* ([coord-map (frame-coord-map frame)]
+         [mapped-start (coord-map (start-segment seg))]
+         [mapped-end (coord-map (end-segment seg))])
+    ($line (xcor-vect mapped-start)
+           (ycor-vect mapped-start)
+           (xcor-vect mapped-end)
+           (ycor-vect mapped-end))))
+
+(define (segments->painter segment-list)
+  (lambda (frame)
+    (for-each
+     (lambda (segment) (draw-segment frame segment))
+     segment-list)))
+
+(segments->painter
+ (list
+  (make-segment (make-vect 0.46 0.00) (make-vect 0.37 0.22))
+  (make-segment (make-vect 0.37 0.22) (make-vect 0.46 0.34))
+  (make-segment (make-vect 0.46 0.34) (make-vect 0.37 0.33))
+  (make-segment (make-vect 0.37 0.33) (make-vect 0.22 0.45))
+  (make-segment (make-vect 0.22 0.45) (make-vect 0.00 0.28))
+  (make-segment (make-vect 0.00 0.33) (make-vect 0.22 0.55))
+  (make-segment (make-vect 0.22 0.55) (make-vect 0.39 0.42))
+  (make-segment (make-vect 0.39 0.42) (make-vect 0.31 1.00))
+  (make-segment (make-vect 0.54 0.00) (make-vect 0.63 0.22))
+  (make-segment (make-vect 0.63 0.22) (make-vect 0.54 0.34))
+  (make-segment (make-vect 0.54 0.34) (make-vect 0.63 0.33))
+  (make-segment (make-vect 0.63 0.33) (make-vect 1.00 0.67))
+  (make-segment (make-vect 1.00 0.72) (make-vect 0.61 0.42))
+  (make-segment (make-vect 0.61 0.42) (make-vect 0.69 1.00))
+  (make-segment (make-vect 0.39 1.00) (make-vect 0.50 0.68))
+  (make-segment (make-vect 0.50 0.68) (make-vect 0.61 1.00))))
+```
+</SchemeRunner>
+
+## 其他变换 + 练习 2.50 (Part2)
+
+- **注**： 由于 HTML Canvas 的坐标系似乎与书中的坐标系不同，以下代码较书中有一些变化
+
+`shrink-to-upper-right`
+
+<SchemeRunner client:load output="painter">
+```scheme
+(define (frame-coord-map frame)
+  (lambda (v)
+    (add-vect
+     (origin-frame frame)
+     (add-vect (scale-vect (xcor-vect v)
+                           (edge1-frame frame))
+               (scale-vect (ycor-vect v)
+                           (edge2-frame frame))))))
+
+(define (draw-segment frame seg)
+  (let* ([coord-map (frame-coord-map frame)]
+         [mapped-start (coord-map (start-segment seg))]
+         [mapped-end (coord-map (end-segment seg))])
+    ($line (xcor-vect mapped-start)
+           (ycor-vect mapped-start)
+           (xcor-vect mapped-end)
+           (ycor-vect mapped-end))))
+
+(define (segments->painter segment-list)
+  (lambda (frame)
+    (for-each
+     (lambda (segment) (draw-segment frame segment))
+     segment-list)))
+
+(define wave (segments->painter
+ (list
+  (make-segment (make-vect 0.46 0.00) (make-vect 0.37 0.22))
+  (make-segment (make-vect 0.37 0.22) (make-vect 0.46 0.34))
+  (make-segment (make-vect 0.46 0.34) (make-vect 0.37 0.33))
+  (make-segment (make-vect 0.37 0.33) (make-vect 0.22 0.45))
+  (make-segment (make-vect 0.22 0.45) (make-vect 0.00 0.28))
+  (make-segment (make-vect 0.00 0.33) (make-vect 0.22 0.55))
+  (make-segment (make-vect 0.22 0.55) (make-vect 0.39 0.42))
+  (make-segment (make-vect 0.39 0.42) (make-vect 0.31 1.00))
+  (make-segment (make-vect 0.54 0.00) (make-vect 0.63 0.22))
+  (make-segment (make-vect 0.63 0.22) (make-vect 0.54 0.34))
+  (make-segment (make-vect 0.54 0.34) (make-vect 0.63 0.33))
+  (make-segment (make-vect 0.63 0.33) (make-vect 1.00 0.67))
+  (make-segment (make-vect 1.00 0.72) (make-vect 0.61 0.42))
+  (make-segment (make-vect 0.61 0.42) (make-vect 0.69 1.00))
+  (make-segment (make-vect 0.39 1.00) (make-vect 0.50 0.68))
+  (make-segment (make-vect 0.50 0.68) (make-vect 0.61 1.00)))))
+
+(define (transform-painter painter origin corner1 corner2)
+  (lambda (frame)
+    (let* ([m (frame-coord-map frame)]
+           [new-origin (m origin)])
+      (painter
+       (make-frame new-origin
+                   (sub-vect (m corner1) new-origin)
+                   (sub-vect (m corner2) new-origin))))))
+
+(define (shrink-to-upper-right painter)
+  (transform-painter painter
+                     (make-vect 0.5 0.0)
+                     (make-vect 1.0 0.0)
+                     (make-vect 0.5 0.5)))
+
+(shrink-to-upper-right wave)
+```
+</SchemeRunner>
+
+`squash-inwards`, `rotate90`、`rotate180`、`rotate270`
+
+<SchemeRunner client:load output="painter">
+```scheme
+(define (frame-coord-map frame)
+  (lambda (v)
+    (add-vect
+     (origin-frame frame)
+     (add-vect (scale-vect (xcor-vect v)
+                           (edge1-frame frame))
+               (scale-vect (ycor-vect v)
+                           (edge2-frame frame))))))
+
+(define (draw-segment frame seg)
+  (let* ([coord-map (frame-coord-map frame)]
+         [mapped-start (coord-map (start-segment seg))]
+         [mapped-end (coord-map (end-segment seg))])
+    ($line (xcor-vect mapped-start)
+           (ycor-vect mapped-start)
+           (xcor-vect mapped-end)
+           (ycor-vect mapped-end))))
+
+(define (segments->painter segment-list)
+  (lambda (frame)
+    (for-each
+     (lambda (segment) (draw-segment frame segment))
+     segment-list)))
+
+(define wave (segments->painter
+ (list
+  (make-segment (make-vect 0.46 0.00) (make-vect 0.37 0.22))
+  (make-segment (make-vect 0.37 0.22) (make-vect 0.46 0.34))
+  (make-segment (make-vect 0.46 0.34) (make-vect 0.37 0.33))
+  (make-segment (make-vect 0.37 0.33) (make-vect 0.22 0.45))
+  (make-segment (make-vect 0.22 0.45) (make-vect 0.00 0.28))
+  (make-segment (make-vect 0.00 0.33) (make-vect 0.22 0.55))
+  (make-segment (make-vect 0.22 0.55) (make-vect 0.39 0.42))
+  (make-segment (make-vect 0.39 0.42) (make-vect 0.31 1.00))
+  (make-segment (make-vect 0.54 0.00) (make-vect 0.63 0.22))
+  (make-segment (make-vect 0.63 0.22) (make-vect 0.54 0.34))
+  (make-segment (make-vect 0.54 0.34) (make-vect 0.63 0.33))
+  (make-segment (make-vect 0.63 0.33) (make-vect 1.00 0.67))
+  (make-segment (make-vect 1.00 0.72) (make-vect 0.61 0.42))
+  (make-segment (make-vect 0.61 0.42) (make-vect 0.69 1.00))
+  (make-segment (make-vect 0.39 1.00) (make-vect 0.50 0.68))
+  (make-segment (make-vect 0.50 0.68) (make-vect 0.61 1.00)))))
+
+(define (transform-painter painter origin corner1 corner2)
+  (lambda (frame)
+    (let* ([m (frame-coord-map frame)]
+           [new-origin (m origin)])
+      (painter
+       (make-frame new-origin
+                   (sub-vect (m corner1) new-origin)
+                   (sub-vect (m corner2) new-origin))))))
+
+(define (beside painter1 painter2)
+  (let* ([split-point (make-vect 0.5 0.0)]
+         [paint-left
+          (transform-painter painter1
+                             (make-vect 0.0 0.0)
+                             split-point
+                             (make-vect 0.0 1.0))]
+         [paint-right
+          (transform-painter painter2
+                             split-point
+                             (make-vect 1.0 0.0)
+                             (make-vect 0.5 1.0))])
+    (lambda (frame)
+      (paint-left frame)
+      (paint-right frame))))
+
+(define (below painter1 painter2)
+  (let* ([split-point (make-vect 0.0 0.5)]
+         [paint-bottom
+          (transform-painter painter1
+                             split-point
+                             (make-vect 1.0 0.5)
+                             (make-vect 0.0 1.0))]
+         [paint-top
+          (transform-painter painter2
+                             (make-vect 0.0 0.0)
+                             (make-vect 1.0 0.0)
+                             split-point)])
+    (lambda (frame)
+      (paint-bottom frame)
+      (paint-top frame))))
+
+(define (squash-inwards painter)
+  (transform-painter painter
+                     (make-vect 0.0 0.0)
+                     (make-vect 0.65 0.35)
+                     (make-vect 0.35 0.65)))
+
+(define (rotate90 painter)
+  (transform-painter painter
+                     (make-vect 0.0 1.0)
+                     (make-vect 0.0 0.0)
+                     (make-vect 1.0 1.0)))
+
+(define (rotate180 painter)
+  (transform-painter painter
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 1.0)
+                     (make-vect 1.0 0.0)))
+
+(define (rotate270 painter)
+  (transform-painter painter
+                     (make-vect 1.0 0.0)
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 0.0)))
+
+(below (beside (rotate180 wave) (rotate270 wave))
+       (beside (squash-inwards wave) (rotate90 wave)))
+```
+</SchemeRunner>

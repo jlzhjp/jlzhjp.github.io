@@ -1,6 +1,90 @@
 import { useState, useRef, useEffect, type ReactNode } from "react"
 import BiwaScheme from "biwascheme"
 import classes from "./SchemeRunner.module.css"
+type SchemePainterResultProps = {
+  code: string
+}
+
+function SchemePainterResult({ code }: SchemePainterResultProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(
+    undefined,
+  )
+
+  useEffect(() => {
+    const context = canvasRef.current!.getContext("2d")!
+    const error = evaluateSchemePainterCode(code, context)
+    setErrorMessage(error)
+  }, [])
+
+  return errorMessage ? (
+    <span style={{ color: "var(--red)" }}>{errorMessage}</span>
+  ) : (
+    <div className="flex justify-center">
+      <canvas width={300} height={300} ref={canvasRef} />
+    </div>
+  )
+}
+
+type SchemeEvalutionResultProps = {
+  code: string
+}
+
+function SchemeEvaluationResult({ code }: SchemeEvalutionResultProps) {
+  const [codeOutput, setCodeOutput] = useState<string>("")
+
+  useEffect(() => {
+    setCodeOutput(evaluateSchemeCode(code))
+  }, [])
+
+  return (
+    <pre
+      className="blog-font-mono leading-none"
+      dangerouslySetInnerHTML={{ __html: codeOutput }}
+    />
+  )
+}
+
+type SchemeRunnerProps = {
+  output: "painter" | "plain"
+  children: ReactNode
+}
+
+export default function SchemeRunner({
+  output = "plain",
+  children,
+}: SchemeRunnerProps) {
+  const codeElementRef = useRef<HTMLDivElement | null>(null)
+  const [codeToExecute, setCodeToExecute] = useState<string | undefined>()
+
+  const handleRunButtonClick = () => {
+    setCodeToExecute(codeElementRef.current!.textContent!)
+  }
+
+  const EvaluationResult =
+    output === "plain" ? SchemeEvaluationResult : SchemePainterResult
+
+  return (
+    <div className="flex flex-col">
+      <div className="blog-border-pixel relative overflow-x-auto overflow-y-hidden leading-none">
+        <div className={classes.astroCodeContainer} ref={codeElementRef}>
+          {children}
+        </div>
+        <button
+          className="px-1 blog-border-pixel absolute right-0 top-0 active:scale-90"
+          onClick={handleRunButtonClick}
+        >
+          Run
+        </button>
+      </div>
+      {codeToExecute && (
+        <div className="blog-border-pixel pt-1 px-2 mt-[-4px] !border-t-0 overflow-x-auto">
+          <EvaluationResult code={codeToExecute} />
+        </div>
+      )}
+    </div>
+  )
+}
 
 const { TopEnv } = BiwaScheme
 
@@ -26,95 +110,111 @@ const shim = `
   (define (runtime) (date2runtime (current-date)))
 `
 
-type SchemeEvalutionResultProps = {
-  code: string
+function initializeSchemeEnvironmenet() {
+  for (const prop in TopEnv) {
+    delete TopEnv[prop]
+  }
 }
 
-function SchemeEvaluationResult({ code }: SchemeEvalutionResultProps) {
-  const [codeOutput, setCodeOutput] = useState<string>("")
+function evaluateSchemePainterCode(
+  code: string,
+  context: CanvasRenderingContext2D,
+) {
+  initializeSchemeEnvironmenet()
+
+  const fullCode = `
+(define (make-frame origin edge1 edge2) (list origin edge1 edge2))
+(define origin-frame car)
+(define edge1-frame cadr)
+(define edge2-frame caddr)
+
+(define (make-vect x y) (cons x y))
+(define xcor-vect car)
+(define ycor-vect cdr)
+
+(define (add-vect v1 v2)
+  (make-vect (+ (xcor-vect v1) (xcor-vect v2))
+             (+ (ycor-vect v1) (ycor-vect v2))))
+
+(define (sub-vect v1 v2)
+  (make-vect (- (xcor-vect v1) (xcor-vect v2))
+             (- (ycor-vect v1) (ycor-vect v2))))
+
+(define (scale-vect s v)
+  (make-vect (* s (xcor-vect v))
+             (* s (ycor-vect v))))
+
+(define (make-segment start end) (cons start end))
+(define start-segment car)
+(define end-segment cdr)
+
+(let ([painter (begin ${code})]
+      [frame (make-frame (make-vect 0 0) (make-vect 1 0) (make-vect 0 1))])
+  (painter frame))`
+
+  const style = window.getComputedStyle(document.body)
+  const strokeColor = style.getPropertyValue("--text")
+  console.log(strokeColor)
+
+  BiwaScheme.define_libfunc("$line", 4, 4, (args: number[]) => {
+    const [x1, y1, x2, y2] = args.map((x) => x * 300)
+
+    context.strokeStyle = strokeColor
+    context.lineCap = "round"
+    context.lineWidth = 2
+    context.beginPath()
+    context.moveTo(x1, y1)
+    context.lineTo(x2, y2)
+    context.stroke()
+  })
+
+  let error = ""
+
+  const interpreter = new BiwaScheme.Interpreter((err: any) => {
+    error += err.toString()
+  })
+  interpreter.evaluate(fullCode)
+
+  return error === "" ? undefined : error
+}
+
+function evaluateSchemeCode(code: string): string {
+  initializeSchemeEnvironmenet()
+
+  let resultHTML = ""
 
   const appendOutput = (old: string, newValue: string) => {
     if (old === "") return newValue
     return old + "<br>" + newValue
   }
 
-  useEffect(() => {
-    for (const prop in TopEnv) {
-      delete TopEnv[prop]
+  BiwaScheme.define_libfunc("display", 1, 1, (args: any) => {
+    resultHTML =
+      resultHTML +
+      `<span style="font-style: italic">${args[0].toString()}</span>`
+  })
+
+  BiwaScheme.define_libfunc("newline", 0, 0, () => {
+    resultHTML = resultHTML + "<br>"
+  })
+
+  const interpreter = new BiwaScheme.Interpreter((err: any) => {
+    resultHTML = appendOutput(
+      resultHTML,
+      `<span style="color: var(--red)">${err.toString()}</span>`,
+    )
+  })
+
+  interpreter.evaluate(shim)
+
+  interpreter.evaluate(code, (result: any) => {
+    if (result) {
+      resultHTML = appendOutput(
+        resultHTML,
+        `<span style="color: var(--green)">${result.toString()}</span>`,
+      )
     }
+  })
 
-    BiwaScheme.define_libfunc("display", 1, 1, (args: any) => {
-      setCodeOutput(
-        (x) =>
-          x + `<span style="font-style: italic">${args[0].toString()}</span>`,
-      )
-    })
-
-    BiwaScheme.define_libfunc("newline", 0, 0, () => {
-      setCodeOutput((x) => x + "<br>")
-    })
-
-    const interpreter = new BiwaScheme.Interpreter((err: any) => {
-      setCodeOutput((x) =>
-        appendOutput(
-          x,
-          `<span style="color: var(--red)">${err.toString()}</span>`,
-        ),
-      )
-    })
-
-    interpreter.evaluate(shim)
-
-    interpreter.evaluate(code, (result: any) => {
-      if (result) {
-        setCodeOutput((x) =>
-          appendOutput(
-            x,
-            `<span style="color: var(--green)">${result.toString()}</span>`,
-          ),
-        )
-      }
-    })
-  }, [])
-
-  return (
-    <pre
-      className="blog-font-mono leading-none"
-      dangerouslySetInnerHTML={{ __html: codeOutput }}
-    />
-  )
-}
-
-type SchemeRunnerProps = {
-  children: ReactNode
-}
-
-export default function SchemeRunner({ children }: SchemeRunnerProps) {
-  const codeElementRef = useRef<HTMLDivElement | null>(null)
-  const [codeToExecute, setCodeToExecute] = useState<string | undefined>()
-
-  const handleRunButtonClick = () => {
-    setCodeToExecute(codeElementRef.current!.textContent!)
-  }
-
-  return (
-    <div className="flex flex-col">
-      <div className="blog-border-pixel relative overflow-x-auto overflow-y-hidden leading-none">
-        <div className={classes.astroCodeContainer} ref={codeElementRef}>
-          {children}
-        </div>
-        <button
-          className="px-1 blog-border-pixel absolute right-0 top-0 active:scale-90"
-          onClick={handleRunButtonClick}
-        >
-          Run
-        </button>
-      </div>
-      {codeToExecute && (
-        <div className="blog-border-pixel pt-1 px-2 mt-[-4px] !border-t-0 overflow-x-auto">
-          <SchemeEvaluationResult code={codeToExecute} />
-        </div>
-      )}
-    </div>
-  )
+  return resultHTML
 }
