@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, type ReactNode } from "react"
 import BiwaScheme from "biwascheme"
 import classes from "./SchemeRunner.module.css"
+
 type SchemePainterResultProps = {
   code: string
+  size: number
 }
 
-function SchemePainterResult({ code }: SchemePainterResultProps) {
+function SchemePainterResult({ code, size }: SchemePainterResultProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined,
@@ -21,7 +23,16 @@ function SchemePainterResult({ code }: SchemePainterResultProps) {
     <span style={{ color: "var(--red)" }}>{errorMessage}</span>
   ) : (
     <div className="flex justify-center">
-      <canvas width={300} height={300} ref={canvasRef} />
+      <canvas
+        style={{
+          imageRendering: "initial",
+          width: `${size}px`,
+          height: `${size}px`,
+        }}
+        width={size * window.devicePixelRatio}
+        height={size * window.devicePixelRatio}
+        ref={canvasRef}
+      />
     </div>
   )
 }
@@ -61,8 +72,10 @@ export default function SchemeRunner({
     setCodeToExecute(codeElementRef.current!.textContent!)
   }
 
-  const EvaluationResult =
-    output === "plain" ? SchemeEvaluationResult : SchemePainterResult
+  const EvaluationResult: ({ code }: { code: string }) => ReactNode =
+    output === "plain"
+      ? ({ code }) => <SchemeEvaluationResult code={code} />
+      : ({ code }) => <SchemePainterResult code={code} size={300} />
 
   return (
     <div className="flex flex-col">
@@ -157,7 +170,7 @@ function evaluateSchemePainterCode(
   console.log(strokeColor)
 
   BiwaScheme.define_libfunc("$line", 4, 4, (args: number[]) => {
-    const [x1, y1, x2, y2] = args.map((x) => x * 300)
+    const [x1, y1, x2, y2] = args.map((x) => x * context.canvas.width)
 
     context.strokeStyle = strokeColor
     context.lineCap = "round"

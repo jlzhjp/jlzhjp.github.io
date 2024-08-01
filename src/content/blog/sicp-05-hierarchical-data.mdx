@@ -1114,17 +1114,14 @@ $$
 
 (define empty-board '())
 
-(define (adjoin-position new-row k rest-of-queens)
-  (cons (make-board-position new-row k) rest-of-queens))
+(define (adjoin-position r c rest-of-queens)
+  (cons (make-board-position r c) rest-of-queens))
 
 (define (safe? k positions)
   (let ([new-queen-position (car positions)]
         [rest-queen-positions (cdr positions)])
     (and (all (lambda (pos) (not (= (board-position-row new-queen-position)
-                                     (board-position-row pos))))
-               rest-queen-positions)
-         (all (lambda (pos) (not (= (board-position-col new-queen-position)
-                                     (board-position-col pos))))
+                                    (board-position-row pos))))
                rest-queen-positions)
          (all (lambda (pos)
                  (let ([delta-row (- (board-position-row new-queen-position) (board-position-row pos))]
