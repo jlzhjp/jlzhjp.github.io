@@ -26,7 +26,7 @@ import Todo from "../../components/Todo.astro"
 (define x (list 'a 'b))
 (define y (list 'c 'd))
 (define z (append x y))
-(display (cdr x))
+(display (cdr x)) (newline)
 (define w (append! x y))
 (display (cdr x))
 ```
@@ -509,3 +509,130 @@ and mutation are equipotent: Each can be implemented in terms of the other.
 </SchemeRunner>
 
 # 表格的表示
+
+## 一维表格
+<SchemeRunner client:load>
+```scheme
+(define (lookup key table)
+  (let ([record (assoc key (cdr table))])
+    (if record
+        (cdr record)
+        false)))
+
+(define (assoc key records)
+  (cond [(null? records) #f]
+        [(equal? key (caar records)) (car records)]
+        [else (assoc key (cdr records))]))
+
+(define (insert! key value table)
+  (let ([record (assoc key (cdr table))])
+    (if record
+        (set-cdr! record value)
+        (set-cdr! table (cons (cons key value) (cdr table)))))
+  'ok)
+
+; 如果不采用这种安排方式，insert!过程每次向表列中加入一个记录后，就需要返回表列的新起始位置
+(define (make-table)
+  (list '*table*))
+
+(define table (make-table))
+
+(insert! 1 "Alice" table)
+(insert! 2 "Bob" table)
+(insert! 2 "Jack" table)
+(display table) (newline)
+(display (lookup 1 table)) (newline)
+(display (lookup 2 table)) (newline)
+```
+</SchemeRunner>
+
+## 二维表格
+<SchemeRunner client:load>
+```scheme
+(define (make-table)
+  (list '*table*))
+
+(define (lookup key-1 key-2 table)
+  (let ([subtable (assoc key-1 (cdr table))])
+    (if subtable
+        (let ([record (assoc key-2 (cdr subtable))])
+          (if record
+              (cdr record)
+              #f))
+        #f)))
+
+
+(define (insert! key-1 key-2 value table)
+  (let ([subtable (assoc key-1 (cdr table))])
+    (if subtable
+        (let ([record (assoc key-2 (cdr subtable))])
+          (if record
+              (set-cdr! record value)
+              (set-cdr! subtable (cons (cons key-2 value) (cdr subtable)))))
+        (set-cdr! table (cons (list key-1 (cons key-2 value)) (cdr table)))))
+  'ok)
+
+(define table (make-table))
+
+(insert! 1 1 "Alice" table)
+(insert! 1 2 "Bob" table)
+(insert! 2 1 "Jack" table)
+(insert! 2 2 "John" table)
+
+(display table) (newline)
+(display (lookup 1 1 table)) (newline)
+(display (lookup 1 2 table)) (newline)
+(display (lookup 2 1 table)) (newline)
+(display (lookup 2 2 table)) (newline)
+(display (lookup 2 3 table)) (newline)
+```
+</SchemeRunner>
+
+## 局部表格
+<SchemeRunner client:load>
+```scheme
+(define (make-table)
+  (let ([local-table (list '*table*)])
+    (define (lookup key-1 key-2)
+      (let ([subtable (assoc key-1 (cdr local-table))])
+        (if subtable
+            (let ([record (assoc key-2 (cdr subtable))])
+              (if record
+                  (cdr record)
+                  #f))
+            #f)))
+
+    (define (insert! key-1 key-2 value)
+      (let ([subtable (assoc key-1 (cdr local-table))])
+        (if subtable
+            (let ([record (assoc key-2 (cdr subtable))])
+              (if record
+                  (set-cdr! record value)
+                  (set-cdr! subtable (cons (cons key-2 value)
+                                           (cdr subtable)))))
+            (set-cdr! local-table
+                      (cons (list key-1 (cons key-2 value))
+                            (cdr local-table)))))
+      'ok)
+
+    (define (dispatch m)
+      (cond [(eq? m 'lookup-proc) lookup]
+            [(eq? m 'insert-proc!) insert!]
+            [else (error "Unknown operation -- TABLE" m)]))
+
+    dispatch))
+
+(define table (make-table))
+
+((table 'insert-proc!) 1 1 "Alice")
+((table 'insert-proc!) 1 2 "Bob")
+((table 'insert-proc!) 2 1 "Jack")
+((table 'insert-proc!) 2 2 "John")
+
+(display ((table 'lookup-proc) 1 1)) (newline)
+(display ((table 'lookup-proc) 1 2)) (newline)
+(display ((table 'lookup-proc) 2 1)) (newline)
+(display ((table 'lookup-proc) 2 2)) (newline)
+(display ((table 'lookup-proc) 2 3)) (newline)
+```
+</SchemeRunner>

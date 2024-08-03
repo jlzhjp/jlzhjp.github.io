@@ -3,9 +3,10 @@ title: "SICP - 7 - 抽象数据的多重表示"
 description: "对应：SICP 2.4 抽象数据的多重表示"
 pubDate: "Jul 26 2024"
 ---
-# 复数运算系统
 
-## 复数运算规则
+import SchemeRunner from "../../components/SchemeRunner.tsx"
+
+# 复数运算规则
 
 $$
 \def\RealPart{\operatorname{Real-part}}
@@ -24,4 +25,395 @@ $$
 \end{aligned}
 $$
 
-## 带标志数据
+# 带标志数据
+```scheme
+(define (attach-tag type-tag contents)
+  (cons type-tag contents))
+
+(define (type-tag datum)
+  (if (pair? datum)
+      (car datum)
+      (error "Bad tagged datum -- TYPE-TAG" datum)))
+
+(define (contents datum)
+  (if (pair? datum)
+      (cdr datum)
+      (error "Bad tagged datum -- CONTENTS" datum)))
+
+(define (rectangular? z)
+  (eq? (type-tag z) 'rectangular))
+
+(define (polar? z)
+  (eq? (type-tag z) 'polar))
+
+; rectangular representation
+(define (real-part-rectangular z) (car z))
+(define (imag-part-rectangular z) (cdr z))
+(define (magnitude-rectangular z)
+  (sqrt (+ (square (real-part-rectangular z))
+           (square (imag-part-rectangular z)))))
+
+(define (angle-rectangular z)
+  (atan (imag-part-rectangular z)
+        (real-part-rectangular z)))
+
+(define (make-from-real-imag-rectangular x y)
+  (attach-tag 'rectangular (cons x y)))
+
+(define (make-from-mag-ang-rectangular r a)
+  (attach-tag 'rectangular
+              (cons (* r (cos a)) (* r (sin a)))))
+
+; polar representation
+(define (real-part-polar z)
+  (* (magnitude z) (cos (angle-polar z))))
+
+(define (imag-part-polar z)
+  (* (magnitude-polar z) (sin (angle-polar z))))
+
+(define (magnitude-polar z) (car z))
+
+(define (angle-polar z) (cdr z))
+
+(define (make-from-real-imag-polar x y)
+  (attach-tag 'polar
+              (cons (sqrt (+ (square x) (square y)))
+                    (atan y x))))
+
+(define (make-from-mag-ang-polar r a)
+  (attach-tag 'polar (cons r a)))
+
+(define (real-part z)
+  (cond [(rectangular? z) (real-part-rectangular (contents z))]
+        [(polar? z) (real-part-polar (contents z))]
+        [else (error "Unknown type -- REAL-PART" z)]))
+
+(define (imag-part z)
+  (cond [(rectangular? z) (imag-part-rectangular (contents z))]
+        [(polar? z) (imag-part-polar (contents z))]
+        [else (error "Unknown type -- IMAG-PART" z)]))
+
+(define (magnitude z)
+  (cond [(rectangular? z) (magnitude-rectangular (contents z))]
+        [(polar? z) (magnitude-polar (contents z))]
+        [else (error "Unknown type -- MAGNITUDE" z)]))
+
+(define (angle z)
+  (cond [(rectangular? z) (angle-rectangular (contents z))]
+        [(polar? z) (angle-polar (contents z))]
+        [else (error "Unknown type -- ANGLE" z)]))
+
+(define (make-from-real-imag x y)
+  (make-from-real-imag-rectangular x y))
+
+(define (make-from-mag-ang r a)
+  (make-from-mag-ang-polar r a))
+
+(define (add-complex z1 z2)
+  (make-from-real-imag (+ (real-part z1) (real-part z2))
+                       (+ (imag-part z1) (imag-part z2))))
+
+(define (sub-complex z1 z2)
+  (make-from-real-imag (- (real-part z1) (real-part z2))
+                       (- (imag-part z1) (imag-part z2))))
+
+(define (mul-complex z1 z2)
+  (make-from-mag-ang (* (magnitude z1) (magnitude z2))
+                     (+ (angle z1) (angle z2))))
+
+(define (div-complex z1 z2)
+  (make-from-mag-ang (/ (magnitude z1) (magnitude z2))
+                     (- (angle z1) (angle z2))))
+```
+
+# 数据导向的程序设计和可加性
+
+- 检查一个数据项的类型，并据此去调用某个适当过程称为 **基于类型的分派**
+- 上述的分派方法具有两个显著弱点
+  - 其中的通用型界面过程（`real-part`、`imag-part`、`magnitude`、`angle`）必须知道所有的不同表示
+  - 即使独立的表示形式可以分别设计，我们也必须保证在整个系统里不存在两个名字相同的过程
+- 数据导向的程序设计就是一种使程序能够直接利用操作表工作的程序设计技术
+
+<SchemeRunner client:load>
+```scheme
+(define (make-table)
+  (let ([local-table (list '*table*)])
+    (define (lookup key-1 key-2)
+      (let ([subtable (assoc key-1 (cdr local-table))])
+        (if subtable
+            (let ([record (assoc key-2 (cdr subtable))])
+              (if record
+                  (cdr record)
+                  #f))
+            #f)))
+
+    (define (insert! key-1 key-2 value)
+      (let ([subtable (assoc key-1 (cdr local-table))])
+        (if subtable
+            (let ([record (assoc key-2 (cdr subtable))])
+              (if record
+                  (set-cdr! record value)
+                  (set-cdr! subtable (cons (cons key-2 value)
+                                           (cdr subtable)))))
+            (set-cdr! local-table
+                      (cons (list key-1 (cons key-2 value))
+                            (cdr local-table)))))
+      'ok)
+
+    (define (dispatch m)
+      (cond [(eq? m 'lookup-proc) lookup]
+            [(eq? m 'insert-proc!) insert!]
+            [else (error "Unknown operation -- TABLE" m)]))
+
+    dispatch))
+
+(define operation-table (make-table))
+(define get (operation-table 'lookup-proc))
+(define put (operation-table 'insert-proc!))
+
+(define (attach-tag type-tag contents)
+  (cons type-tag contents))
+
+(define (type-tag datum)
+  (if (pair? datum)
+      (car datum)
+      (error "Bad tagged datum -- TYPE-TAG" datum)))
+
+(define (contents datum)
+  (if (pair? datum)
+      (cdr datum)
+      (error "Bad tagged datum -- CONTENTS" datum)))
+
+(define (install-rectangular-package)
+  ;; internal procedures
+  (define (real-part z) (car z))
+  (define (imag-part z) (cdr z))
+  (define (make-from-real-imag x y) (cons x y))
+  (define (magnitude z)
+    (sqrt (+ (square (real-part z))
+             (square (imag-part z)))))
+  (define (angle z)
+    (atan (imag-part z) (real-part z)))
+  (define (make-from-mag-ang r a)
+    (cons (* r (cos a)) (* r (sin a))))
+
+  (define (tag x) (attach-tag 'rectangular x))
+
+  ;; interface to the rest of the system
+  (put 'real-part '(rectangular) real-part)
+  (put 'imag-part '(rectangular) imag-part)
+  (put 'magnitude '(rectangular) magnitude)
+  (put 'angle '(rectangular) angle)
+  (put 'make-from-real-imag 'rectangular
+       (lambda (x y) (tag (make-from-real-imag x y))))
+  (put 'make-from-mag-ang 'rectangular
+       (lambda (r a) (tag (make-from-mag-ang r a))))
+  'done)
+
+(define (install-polar-package)
+  ;; internal procedures
+  (define (magnitude z) (car z))
+  (define (angle z) (cdr z))
+  (define (make-from-mag-ang r a) (cons r a))
+  (define (real-part z)
+    (* (magnitude z) (cos (angle z))))
+  (define (imag-part z)
+    (* (magnitude z) (cos (angle z))))
+  (define (make-from-real-imag x y)
+    (cons (sqrt (+ (square x) (square y)))
+          (atan y x)))
+
+  ;; interface to the rest of the system
+  (define (tag x) (attach-tag 'polar x))
+
+  (put 'real-part '(polar) real-part)
+  (put 'imag-part '(polar) imag-part)
+  (put 'magnitude '(polar) magnitude)
+  (put 'angle '(polar) angle)
+  (put 'make-from-real-imag 'polar
+       (lambda (x y) (tag (make-from-real-imag x y))))
+  (put 'make-from-mag-ang 'polar
+       (lambda (r a) (tag (make-from-mag-ang r a))))
+  'done)
+
+(define (apply-generic op . args)
+  (let* ([type-tags (map type-tag args)]
+         [proc (get op type-tags)])
+    (if proc
+        (apply proc (map contents args))
+        (error "No method for these types -- APPLY-GENERIC"
+               (list op type-tags)))))
+
+(install-polar-package)
+(install-rectangular-package)
+
+(define (real-part z) (apply-generic 'real-part z))
+(define (imag-part z) (apply-generic 'imag-part z))
+(define (magnitude z) (apply-generic 'magnitude z))
+(define (angle z) (apply-generic 'angle z))
+
+(define (make-from-real-imag x y)
+  ((get 'make-from-real-imag 'rectangular) x y))
+
+(define (make-from-mag-ang r a)
+  ((get 'make-from-mag-ang 'polar) r a))
+
+(define (add-complex z1 z2)
+  (make-from-real-imag (+ (real-part z1) (real-part z2))
+                       (+ (imag-part z1) (imag-part z2))))
+
+(define (sub-complex z1 z2)
+  (make-from-real-imag (- (real-part z1) (real-part z2))
+                       (- (imag-part z1) (imag-part z2))))
+
+(define (mul-complex z1 z2)
+  (make-from-mag-ang (* (magnitude z1) (magnitude z2))
+                     (+ (angle z1) (angle z2))))
+
+(define (div-complex z1 z2)
+  (make-from-mag-ang (/ (magnitude z1) (magnitude z2))
+                     (- (angle z1) (angle z2))))
+
+(define comp1 (make-from-real-imag 3 4))
+(define comp2 (make-from-real-imag 6 8))
+
+(display (add-complex comp1 comp2))
+```
+</SchemeRunner>
+
+## 练习 2.73
+<SchemeRunner client:load>
+```scheme
+(define (make-table)
+  (let ([local-table (list '*table*)])
+    (define (lookup key-1 key-2)
+      (let ([subtable (assoc key-1 (cdr local-table))])
+        (if subtable
+            (let ([record (assoc key-2 (cdr subtable))])
+              (if record
+                  (cdr record)
+                  #f))
+            #f)))
+
+    (define (insert! key-1 key-2 value)
+      (let ([subtable (assoc key-1 (cdr local-table))])
+        (if subtable
+            (let ([record (assoc key-2 (cdr subtable))])
+              (if record
+                  (set-cdr! record value)
+                  (set-cdr! subtable (cons (cons key-2 value)
+                                           (cdr subtable)))))
+            (set-cdr! local-table
+                      (cons (list key-1 (cons key-2 value))
+                            (cdr local-table)))))
+      'ok)
+
+    (define (dispatch m)
+      (cond [(eq? m 'lookup-proc) lookup]
+            [(eq? m 'insert-proc!) insert!]
+            [else (error "Unknown operation -- TABLE" m)]))
+
+    dispatch))
+
+(define operation-table (make-table))
+(define get (operation-table 'lookup-proc))
+(define put (operation-table 'insert-proc!))
+(define (variable? x) (symbol? x))
+
+(define (same-variable? v1 v2)
+  (and (variable? v1) (variable? v2) (eq? v1 v2)))
+
+(define (operator exp) (car exp))
+
+(define (operands exp) (cdr exp))
+
+(define (deriv exp var)
+  (cond [(number? exp) 0]
+        [(variable? exp) (if (same-variable? exp var) 1 0)]
+        [else ((get 'deriv (operator exp)) (operands exp) var)]))
+
+(define (install-deriv-package)
+  (define (=number? exp num)
+    (and (number? exp) (= exp num)))
+
+  (define (make-sum a1 a2)
+    (cond [(=number? a1 0) a2]
+          [(=number? a2 0) a1]
+          [(and (number? a1) (number? a2))]
+          [else (list '+ a1 a2)]))
+
+  (define (make-product m1 m2)
+    (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+          [(=number? m1 1) m2]
+          [(=number? m2 1) m1]
+          [(and (number? m1) (number? m2)) (* m1 m2)]
+          [else (list '* m1 m2)]))
+
+  (define (make-expt b e)
+    (cond [(=number? b 0) 0]
+          [(=number? b 1) 1]
+          [(=number? e 0) 1]
+          [(=number? e 1) b]
+          [(and (number? b) (number? e)) (expt b e)]
+          [else (list '** b e)]))
+
+  (define (addend operands) (car operands))
+
+  (define (augend operands)
+    (let ([rest (cdr operands)])
+      (if (null? (cdr rest))
+          (car rest)
+          (cons '+ rest))))
+
+  (define (multiplier operands) (car operands))
+
+  (define (multiplicand operands)
+    (let ([rest (cdr operands)])
+      (if (null? (cdr rest))
+          (car rest)
+          (cons '* rest))))
+
+  (define (base operands) (car operands))
+  (define (exponent operands) (cadr operands))
+
+  (define (sum-deriv operands var)
+    (make-sum (deriv (addend operands) var)
+              (deriv (augend operands) var)))
+
+  (define (product-deriv operands var)
+    (make-sum (make-product (multiplier operands)
+                            (deriv (multiplicand operands) var))
+              (make-product (deriv (multiplier operands) var)
+                            (multiplicand operands))))
+
+  (define (expt-deriv operands var)
+    (make-product (exponent operands)
+                  (make-expt (base operands)
+                             (- (exponent operands) 1))))
+
+  (put 'deriv '+ sum-deriv)
+  (put 'deriv '* product-deriv)
+  (put 'deriv '** expt-deriv)
+
+  'done)
+
+(install-deriv-package)
+
+(display (deriv '(* 2 (+ x 1)) 'x)) (newline)
+(display (deriv '(** (+ x 1) 2) 'x)) (newline)
+```
+</SchemeRunner>
+
+(a) 数字符号是无限的，我们无法用表中的一个键来代表所有的数字，因此只能对其单独处理。由于每个表达式的变量不同，同样无法将其作为表中的一个键
+(d) 需要做出的改动：
+```scheme
+(put '+ 'deriv sum-deriv)
+(put '* 'deriv product-deriv)
+(put '** 'deriv expt-deriv)
+```
+
+## 练习 2.74
+
+## 练习 2.75
+
+## 练习 2.76
