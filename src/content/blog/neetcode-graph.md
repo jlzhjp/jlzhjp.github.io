@@ -142,7 +142,7 @@ public:
 
 # [Rotting Oranges](https://leetcode.com/problems/rotting-oranges/)
 
-注意判断状态是否有效的时机。在将状态加入队列时判断呢？还是取出状态时判断
+注意判断状态是否有效的时机。在将状态加入队列时判断？还是取出状态时判断
 
 ```cpp
 class Solution {
