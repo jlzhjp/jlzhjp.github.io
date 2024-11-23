@@ -1,0 +1,41 @@
+---
+import { Image } from "astro:assets"
+
+type RelatedLink = {
+  title: string
+  href: string
+}
+
+interface Props {
+  cover: string
+  title: string
+  links: RelatedLink[]
+}
+
+const { cover, title, links } = Astro.props
+---
+
+<div class="border-pixel m-4 flex gap-8">
+  <Image
+    class="pixelated"
+    loading="eager"
+    src={cover}
+    width={140}
+    height={210}
+    alt={title}
+  />
+  <div>
+    <h3 class="mt-2 font-pixel text-2xl">{title}</h3>
+    <ul class="pt-2 pixel-ul block">
+      {
+        links.map((link) => (
+          <li>
+            <a class="font-pixel pixel-link" href={link.href}>
+              {link.title}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</div>

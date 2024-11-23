@@ -1,8 +1,8 @@
 ---
 import { type CollectionEntry, getCollection } from "astro:content"
 
-import BasicLayout from "../layouts/BasicLayout.astro"
-import FormattedDate from "../components/FormattedDate"
+import BasicLayout from "../../layouts/BasicLayout.astro"
+import FormattedDate from "../../components/FormattedDate.astro"
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog")
@@ -14,14 +14,14 @@ export async function getStaticPaths() {
 type Props = CollectionEntry<"blog">
 
 const post = Astro.props
-const { title, description, pubDate, updatedDate, heroImage } = post.data
+const { title, description, pubDate } = post.data
 
 const { Content, headings } = await post.render()
 ---
 
 <BasicLayout title={title} description={description}>
   <main class="mx-4">
-    <article class="max-w-[1080px] mx-auto blog-font-pixel">
+    <article class="max-w-[1080px] mx-auto font-pixel">
       <div>
         <h1 class="text-4xl m-4 text-center">{title}</h1>
         <div class="text-center"><FormattedDate date={pubDate} /></div>
@@ -37,19 +37,19 @@ const { Content, headings } = await post.render()
     >
       <nav
         id="table-of-contents"
-        class="blog-border-pixel blog-font-pixel float-end w-screen md:w-[480px] h-screen bg-[var(--base)] overflow-y-auto"
+        class="border-pixel font-pixel float-end w-screen md:w-[480px] h-screen bg-[var(--base)] overflow-y-auto"
       >
         <h2 class="m-2">Contents</h2>
         <button
           id="button-close-menu"
-          class="blog-icon-close blog-border-pixel w-[48px] h-[48px] fixed top-4 right-4 bg-[var(--base)] active:scale-75"
+          class="icon-close border-pixel fixed top-4 right-4 bg-[var(--base)] active:scale-75"
         ></button>
         <div class="m-2">
           {
             headings.map((heading) => (
               <a
                 style={`padding-left: ${heading.depth - 1}em;`}
-                class="block text-nowrap overflow-ellipsis"
+                class="pixel-link block text-nowrap overflow-ellipsis"
                 href={"#" + heading.slug}
               >
                 {heading.text}
@@ -63,7 +63,7 @@ const { Content, headings } = await post.render()
 
   <button
     id="button-open-menu"
-    class="blog-icon-menu blog-border-pixel fixed bottom-8 right-8 w-[48px] h-[48px] active:scale-75 bg-[var(--base)]"
+    class="icon-menu border-pixel fixed bottom-8 right-8 active:scale-75 bg-[var(--base)]"
   >
   </button>
 

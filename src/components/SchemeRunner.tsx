@@ -10,7 +10,7 @@ type SchemePainterResultProps = {
 function SchemePainterResult({ code, size }: SchemePainterResultProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
-    undefined,
+    undefined
   )
 
   useEffect(() => {
@@ -50,7 +50,7 @@ function SchemeEvaluationResult({ code }: SchemeEvalutionResultProps) {
 
   return (
     <pre
-      className="blog-font-mono leading-none"
+      className="font-pixel-mono leading-none"
       dangerouslySetInnerHTML={{ __html: codeOutput }}
     />
   )
@@ -79,19 +79,19 @@ export default function SchemeRunner({
 
   return (
     <div className="flex flex-col">
-      <div className="blog-border-pixel relative overflow-x-auto overflow-y-hidden leading-none">
+      <div className="border-pixel relative overflow-x-auto overflow-y-hidden leading-none">
         <div className={classes.astroCodeContainer} ref={codeElementRef}>
           {children}
         </div>
         <button
-          className="px-1 blog-border-pixel absolute right-0 top-0 active:scale-90"
+          className="px-1 border-pixel absolute right-0 top-0 active:scale-90"
           onClick={handleRunButtonClick}
         >
           Run
         </button>
       </div>
       {codeToExecute && (
-        <div className="blog-border-pixel pt-1 px-2 mt-[-4px] !border-t-0 overflow-x-auto">
+        <div className="border-pixel pt-1 px-2 mt-[-4px] !border-t-0 overflow-x-auto">
           <EvaluationResult code={codeToExecute} />
         </div>
       )}
@@ -131,7 +131,7 @@ function initializeSchemeEnvironmenet() {
 
 function evaluateSchemePainterCode(
   code: string,
-  context: CanvasRenderingContext2D,
+  context: CanvasRenderingContext2D
 ) {
   initializeSchemeEnvironmenet()
 
@@ -214,7 +214,7 @@ function evaluateSchemeCode(code: string): string {
   const interpreter = new BiwaScheme.Interpreter((err: any) => {
     resultHTML = appendOutput(
       resultHTML,
-      `<span style="color: var(--red)">${err.toString()}</span>`,
+      `<span style="color: var(--red)">${err.toString()}</span>`
     )
   })
 
@@ -224,7 +224,7 @@ function evaluateSchemeCode(code: string): string {
     if (result) {
       resultHTML = appendOutput(
         resultHTML,
-        `<span style="color: var(--green)">${result.toString()}</span>`,
+        `<span style="color: var(--green)">${result.toString()}</span>`
       )
     }
   })

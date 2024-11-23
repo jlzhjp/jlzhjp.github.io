@@ -1,46 +1,52 @@
 ---
-
+import { Image } from "astro:assets"
 ---
 
-<footer class="px-4 py-2 blog-font-pixel blog-border-pixel">
+<footer class="m-4 px-4 py-2 font-pixel border-pixel">
   <p>
     <span>All content on this site is licensed under </span>
     <a
       href="https://creativecommons.org/licenses/by-nc/4.0/?ref=chooser-v1"
       target="_blank"
       rel="license noopener noreferrer"
-      class="inline-flex items-center"
+      class="pixel-link inline-flex items-center"
     >
       <span class="mr-2">CC BY-NC 4.0</span>
-      <img
+      <Image
         style={{
           display: "inline",
           height: "22px!important",
           marginLeft: "3px",
           verticalAlign: "text-bottom",
         }}
+        width="22"
+        height="22"
         src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"
-        alt=""
+        alt="CC"
       />
-      <img
+      <Image
         style={{
           display: "inline",
           height: "22px!important",
           marginLeft: "3px",
           verticalAlign: "text-bottom",
         }}
+        width="22"
+        height="22"
         src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"
-        alt=""
+        alt="BY"
       />
-      <img
+      <Image
         style={{
           display: "inline",
           height: "22px!important",
           marginLeft: "3px",
           verticalAlign: "text-bottom",
         }}
+        width="22"
+        height="22"
         src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"
-        alt=""
+        alt="NC"
       />
     </a>
   </p>

@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @font-face {
   font-family: "Ark Pixel Fuse SC";
   src: url("/fonts/fusion-pixel-10px-proportional-zh_hans.woff2");
@@ -80,6 +84,72 @@
   }
 }
 
+@layer utilities {
+  .pixelated {
+    image-rendering: pixelated;
+  }
+
+  .font-pixel {
+    font-family: "Ark Pixel Fuse SC", "Noto Serif CJK SC", "SimSun";
+  }
+
+  .font-pixel-mono {
+    font-family: "Scientifica", "Fira Code", "Consolas", "Ark Pixel Fuse SC";
+  }
+
+  .border-pixel {
+    border-image: url(/border-light-1px.webp) 3 round;
+    image-rendering: pixelated;
+    border-style: solid;
+    border-width: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .border-pixel {
+      border-image: url(/border-dark-1px.webp) 3 round;
+    }
+  }
+}
+
+@layer components {
+  .pixel-link {
+    @apply text-[var(--pink)] hover:underline;
+    @apply before:content-['['] before:opacity-0 before:transition-opacity;
+    @apply after:content-[']'] after:opacity-0 after:transition-opacity;
+    @apply before:hover:opacity-100 after:hover:opacity-100;
+  }
+
+  .icon-close {
+    background-image: url(/close-light.webp);
+    @apply bg-no-repeat bg-cover pixelated w-[48px] h-[48px];
+  }
+
+  .icon-menu {
+    background-image: url(/menu-light.webp);
+    @apply bg-no-repeat bg-cover pixelated w-[48px] h-[48px];
+  }
+
+  .pixel-ul {
+    image-rendering: pixelated;
+    margin-left: 1em;
+    list-style-image: url(/bullet-1-light.webp);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .icon-close {
+      background-image: url(/close-dark.webp);
+    }
+
+    .icon-menu {
+      background-image: url(/menu-dark.webp);
+    }
+
+    .pixel-ul {
+      list-style-image: url(/bullet-1-dark.webp);
+    }
+  }
+}
+
 html {
   color-scheme: light;
   color: var(--text);
@@ -98,178 +168,133 @@ body {
   font-size: calc(15px + 0.390625vw);
 }
 
-.blog-font-mono {
-  font-family: "Scientifica", "Fira Code", "Consolas", "Ark Pixel Fuse SC";
-}
-
-.blog-font-pixel {
-  font-family: "Ark Pixel Fuse SC", "Noto Serif CJK SC", "SimSun";
-}
-
-.blog-border-pixel {
-  border-image: url(/border-light-1px.webp) 3 round;
-  image-rendering: pixelated;
-  border-style: solid;
-  border-width: 12px;
-}
-
-.blog-icon-close {
-  background-image: url(/close-light.webp);
-  background-repeat: no-repeat;
-  background-size: cover;
-  image-rendering: pixelated;
-}
-
-.blog-icon-menu {
-  background-image: url(/menu-light.webp);
-  background-repeat: no-repeat;
-  background-size: cover;
-  image-rendering: pixelated;
-}
-
-@media (prefers-color-scheme: dark) {
-  .blog-border-pixel {
-    border-image: url(/border-dark-1px.webp) 3 round;
+.md-body {
+  a {
+    color: var(--pink);
   }
 
-  .blog-icon-close {
-    background-image: url(/close-dark.webp);
+  a:hover {
+    text-decoration: underline;
   }
 
-  .blog-icon-menu {
-    background-image: url(/menu-dark.webp);
+  a::before {
+    content: "[";
+    opacity: 0;
+    transition: opacity 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
   }
-}
 
-.pixelated {
-  image-rendering: pixelated;
-}
-
-a {
-  color: var(--pink);
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-a::before {
-  content: "[";
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
-}
-
-a::after {
-  content: "]";
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
-}
-
-a:hover::before {
-  opacity: 1;
-}
-
-a:hover::after {
-  opacity: 1;
-}
-
-.katex-display {
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.md-body p {
-  margin-top: 1em;
-  margin-bottom: 1em;
-}
-
-.md-body h1 {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  font-size: 2rem;
-}
-
-.md-body h1::before {
-  content: "# ";
-}
-
-.md-body h2 {
-  font-size: 1.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.md-body h3 {
-  font-size: 1.25rem;
-}
-
-.md-body h4 {
-  font-size: 1rem;
-}
-
-.md-body code {
-  font-family: "Scientifica", "Fira Code", "Consolas", "Ark Pixel Fuse SC";
-}
-
-.astro-code {
-  border-image: url(/border-light-1px.webp) 3 round;
-  border-width: 12px;
-  image-rendering: pixelated;
-  padding: 0.5rem;
-  line-height: 1;
-}
-
-.md-body ol {
-  list-style-type: decimal;
-  margin-left: 1em;
-}
-
-.md-body ul {
-  image-rendering: pixelated;
-  margin-left: 1em;
-  list-style-image: url(/bullet-1-light.webp);
-}
-
-.md-body table {
-  width: 100%;
-  border-collapse: collapse;
-  border: 4px solid var(--surface2);
-  image-rendering: pixelated;
-}
-
-.md-body th {
-  border-bottom: 4px solid var(--surface2);
-}
-
-@media (prefers-color-scheme: dark) {
-  .md-body ul {
-    list-style-image: url(/bullet-1-dark.webp);
+  a::after {
+    content: "]";
+    opacity: 0;
+    transition: opacity 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
   }
-}
 
-.md-body blockquote {
-  border-left: 4px solid var(--text);
-  padding-left: 1em;
-  font-style: italic;
-  margin-top: 1em;
-  margin-bottom: 1em;
-}
+  a:hover::before {
+    opacity: 1;
+  }
 
-@media (prefers-color-scheme: dark) {
-  .astro-code,
-  .astro-code span,
-  .shiki,
-  .shiki span {
-    color: var(--shiki-dark) !important;
-    background-color: var(--shiki-dark-bg) !important;
-    /* Optional, if you also want font styles */
-    font-style: var(--shiki-dark-font-style) !important;
-    font-weight: var(--shiki-dark-font-weight) !important;
-    text-decoration: var(--shiki-dark-text-decoration) !important;
+  a:hover::after {
+    opacity: 1;
+  }
+
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  p {
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
+
+  h1 {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+
+    &::before {
+      content: "# ";
+    }
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  h4 {
+    font-size: 1rem;
+  }
+
+  code {
+    font-family: "Scientifica", "Fira Code", "Consolas", "Ark Pixel Fuse SC";
   }
 
   .astro-code {
-    border-image: url(/border-dark-1px.webp) 3 round;
+    border-image: url(/border-light-1px.webp) 3 round;
+    border-width: 12px;
     image-rendering: pixelated;
+    padding: 0.5rem;
+    line-height: 1;
+  }
+
+  ol {
+    list-style-type: decimal;
+    margin-left: 1em;
+  }
+
+  ul {
+    image-rendering: pixelated;
+    margin-left: 1em;
+    list-style-image: url(/bullet-1-light.webp);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 4px solid var(--surface2);
+    image-rendering: pixelated;
+  }
+
+  th {
+    border-bottom: 4px solid var(--surface2);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    ul {
+      list-style-image: url(/bullet-1-dark.webp);
+    }
+  }
+
+  blockquote {
+    border-left: 4px solid var(--text);
+    padding-left: 1em;
+    font-style: italic;
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .astro-code,
+    .astro-code span,
+    .shiki,
+    .shiki span {
+      color: var(--shiki-dark) !important;
+      background-color: var(--shiki-dark-bg) !important;
+      /* Optional, if you also want font styles */
+      font-style: var(--shiki-dark-font-style) !important;
+      font-weight: var(--shiki-dark-font-weight) !important;
+      text-decoration: var(--shiki-dark-text-decoration) !important;
+    }
+
+    .astro-code {
+      border-image: url(/border-dark-1px.webp) 3 round;
+      image-rendering: pixelated;
+    }
   }
 }

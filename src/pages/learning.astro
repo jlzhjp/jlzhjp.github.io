@@ -1,0 +1,43 @@
+---
+import LearningItem from "../components/LearningItem.astro"
+import BasicLayout from "../layouts/BasicLayout.astro"
+---
+
+<BasicLayout title="Learning" description="Lorem ipsum dolor sit amet">
+  <main class="m-2">
+    <LearningItem
+      cover="/covers/krc.webp"
+      title="The C Programming Language"
+      links={[{ title: "Exercises", href: "https://github.com/jlzhjp/krc" }]}
+    />
+    <LearningItem
+      cover="/covers/sicp.webp"
+      title="Structure and Interpretation of Computer Programs"
+      links={[
+        {
+          title: "Exercises",
+          href: "https://github.com/jlzhjp/sicp-solutions",
+        },
+        {
+          title: "Videos",
+          href: "https://www.youtube.com/playlist?list=PL8FE88AA54363BC46",
+        },
+      ]}
+    />
+    <LearningItem
+      cover="/covers/apue.webp"
+      title="Advanced Programming in the UNIX Environment"
+      links={[]}
+    />
+    <LearningItem
+      cover="/covers/csapp.webp"
+      title="Computer Systems: A Programmer's Perspective"
+      links={[]}
+    />
+    <LearningItem
+      cover="/covers/ddia.webp"
+      title="Designing Data-Intensive Applications"
+      links={[]}
+    />
+  </main>
+</BasicLayout>

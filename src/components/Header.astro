@@ -1,40 +1,28 @@
----
-
----
-
 <style>
   header {
     color: var(--pink);
     border-image: url(/border-header-light.webp) 3 round;
     border-width: 16px;
     image-rendering: pixelated;
-    filter: drop-shadow(2px 2px 0 var(--yellow));
-    text-shadow:
-      -1px -1px 0 var(--mantle),
-      1px -1px 0 var(--mantle),
-      -1px 1px 0 var(--mantle),
-      1px 1px 0 var(--mantle);
   }
 
   @media (prefers-color-scheme: dark) {
     header {
       border-image: url(/border-header-dark.webp) 3 round;
-      filter: drop-shadow(2px 2px 0 var(--yellow));
     }
   }
 </style>
 
-<header class="flex px-4 py-2 m-4 items-center blog-font-pixel">
-  <h1 class="m-0 text-3xl blog-font-pixel">
-    <a href="/">Home</a>
-  </h1>
-  <div class="flex-grow"></div>
-  <ul class="flex gap-2">
-    <li class="text-xl">
-      <a href="/about">About</a>
+<header class="flex px-4 py-2 m-4 items-center justify-center font-pixel">
+  <ul class="flex gap-4">
+    <li class="text-2xl">
+      <a class="pixel-link" href="/">Blog</a>
     </li>
-    <li class="text-xl">
-      <a href="/thanks">Thanks</a>
+    <li class="text-2xl">
+      <a class="pixel-link" href="/learning">Learning</a>
+    </li>
+    <li class="text-2xl">
+      <a class="pixel-link" href="/projects">Projects</a>
     </li>
   </ul>
   <div class="ml-4 flex">
